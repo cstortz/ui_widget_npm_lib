@@ -106,6 +106,26 @@ base64 < ~/.kube/config | tr -d '\n'
 
 Paste the single-line output into the `KUBE_CONFIG` secret.
 
+**Private LAN clusters (192.168.x.x)**
+
+GitHub-hosted runners cannot reach a control plane on a private IP. The **deploy**
+job uses `runs-on: self-hosted` so it runs on a machine on your network (e.g.
+`dev01`).
+
+1. Register a self-hosted runner on dev01:
+   - Repo → **Settings → Actions → Runners → New self-hosted runner**
+   - Follow the Linux install steps on dev01
+2. Ensure **kubectl** and **helm** are installed on dev01
+3. Either keep `KUBE_CONFIG` in GitHub secrets **or** rely on `~/.kube/config`
+   already on dev01
+
+**Deploy without GitHub Actions (immediate option on dev01):**
+
+```bash
+cd ~/repos/ui_widget_npm_lib/ui_widget_npm_lib
+./scripts/deploy.sh helm dev
+```
+
 **Common mistakes**
 
 - Pasting only part of the file
