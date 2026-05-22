@@ -30,6 +30,135 @@ npm run test
 
 ---
 
+## Getting started
+
+### Install
+
+```bash
+# Core only (types + adapters)
+npm install @ncs_software/widget-system
+
+# Angular app
+npm install @ncs_software/widget-system @ncs_software/widget-system-angular
+
+# React app
+npm install @ncs_software/widget-system @ncs_software/widget-system-react
+```
+
+### Angular
+
+Register the adapter and add a workspace route:
+
+```typescript
+// app.config.ts
+import { MemoryWidgetStateAdapter } from '@ncs_software/widget-system';
+import { provideWidgetSystem } from '@ncs_software/widget-system-angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideWidgetSystem({ adapter: new MemoryWidgetStateAdapter() }),
+    // use HttpWidgetStateAdapter({ baseUrl: '/api/widgets' }) in production
+  ],
+};
+```
+
+```typescript
+// workspace-page.component.ts
+import {
+  WidgetPanelComponent,
+  WorkspaceShellComponent,
+} from '@ncs_software/widget-system-angular';
+
+@Component({
+  imports: [WorkspaceShellComponent, WidgetPanelComponent, MyWidgetComponent],
+  template: `
+    <wdg-workspace-shell workspaceId="job-123" [defaultWorkspace]="defaultWorkspace">
+      <div primaryPanel>
+        <wdg-widget-panel title="Resume" (collapseChange)="onCollapse('resume-panel', $event)">
+          <my-resume-widget [config]="resumeConfig" />
+        </wdg-widget-panel>
+      </div>
+      <div secondaryPanel>
+        <wdg-widget-panel title="Guide">
+          <my-guide-widget [config]="guideConfig" />
+        </wdg-widget-panel>
+      </div>
+    </wdg-workspace-shell>
+  `,
+})
+export class WorkspacePageComponent { /* ... */ }
+```
+
+Inside a widget, inject `WidgetStateService` to load/save typed state:
+
+```typescript
+this.widgetStateService
+  .loadState<MyState>(this.config.widgetId, this.config.contextId)
+  .subscribe(saved => this.data.set(saved?.payload ?? defaultState()));
+```
+
+### React
+
+Wrap the app (or workspace route) with `WidgetStateProvider`:
+
+```tsx
+// main.tsx
+import { MemoryWidgetStateAdapter } from '@ncs_software/widget-system';
+import { WidgetStateProvider } from '@ncs_software/widget-system-react';
+
+const adapter = new MemoryWidgetStateAdapter();
+
+createRoot(document.getElementById('root')!).render(
+  <WidgetStateProvider adapter={adapter}>
+    <App />
+  </WidgetStateProvider>
+);
+```
+
+```tsx
+// WorkspacePage.tsx
+import {
+  WidgetPanel,
+  WorkspaceShell,
+  useWidgetStateService,
+} from '@ncs_software/widget-system-react';
+
+export function WorkspacePage() {
+  const widgetStateService = useWidgetStateService();
+
+  return (
+    <WorkspaceShell
+      workspaceId="job-123"
+      defaultWorkspace={defaultWorkspace}
+      primaryPanel={
+        <WidgetPanel title="Resume" collapsed={collapsed} onCollapseChange={setCollapsed}>
+          <MyResumeWidget config={resumeConfig} />
+        </WidgetPanel>
+      }
+      secondaryPanel={
+        <WidgetPanel title="Guide">
+          <MyGuideWidget config={guideConfig} />
+        </WidgetPanel>
+      }
+    />
+  );
+}
+```
+
+Inside a widget, call `useWidgetStateService()` and `loadState` / `saveState` (Promise-based).
+
+### Adapters
+
+| Adapter | Use when |
+|---------|----------|
+| `MemoryWidgetStateAdapter` | Demos, unit tests, SSR without persistence |
+| `LocalStorageWidgetStateAdapter` | Single-browser prototyping |
+| `HttpWidgetStateAdapter` | Production — backend at `/api/widgets/*` (see spec) |
+
+Live demos: [Angular](http://widget-system.dev.stortz.tech/angular/workspace/demo) · [React](http://widget-system.dev.stortz.tech/react/workspace/demo)
+
+---
+
 ## Repository layout
 
 ```

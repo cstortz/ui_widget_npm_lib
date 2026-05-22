@@ -11,7 +11,7 @@ const adapter = new MemoryWidgetStateAdapter();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <WidgetStateProvider adapter={adapter}>
-      <BrowserRouter>
+      <BrowserRouter basename="/react">
         <App />
       </BrowserRouter>
     </WidgetStateProvider>

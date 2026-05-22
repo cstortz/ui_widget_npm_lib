@@ -4,7 +4,10 @@ import './WidgetPanel.css';
 export interface WidgetPanelProps {
   title: string;
   canCollapse?: boolean;
+  /** Uncontrolled initial collapsed state */
   initialCollapsed?: boolean;
+  /** Controlled collapsed state — when set, parent owns collapse state */
+  collapsed?: boolean;
   headerActions?: ReactNode;
   children: ReactNode;
   onCollapseChange?: (collapsed: boolean) => void;
@@ -14,15 +17,19 @@ export function WidgetPanel({
   title,
   canCollapse = true,
   initialCollapsed = false,
+  collapsed: controlledCollapsed,
   headerActions,
   children,
   onCollapseChange,
 }: WidgetPanelProps) {
-  const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const [internalCollapsed, setInternalCollapsed] = useState(initialCollapsed);
+  const collapsed = controlledCollapsed ?? internalCollapsed;
 
   const toggleCollapse = () => {
     const next = !collapsed;
-    setCollapsed(next);
+    if (controlledCollapsed === undefined) {
+      setInternalCollapsed(next);
+    }
     onCollapseChange?.(next);
   };
 
