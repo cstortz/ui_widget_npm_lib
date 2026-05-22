@@ -11,15 +11,19 @@ demoReact:
   replicaCount: 1
 
 ingress:
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
   hosts:
     - host: widget-system.stortz.tech
       paths:
-        - path: /angular
-          pathType: Prefix
+        - path: /angular(/|$)(.*)
+          pathType: ImplementationSpecific
           service: demo-angular
-        - path: /react
-          pathType: Prefix
+        - path: /react(/|$)(.*)
+          pathType: ImplementationSpecific
           service: demo-react
-        - path: /
-          pathType: Prefix
+        - path: /()(.*)
+          pathType: ImplementationSpecific
           service: demo-angular
