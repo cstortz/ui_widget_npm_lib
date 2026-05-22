@@ -1,6 +1,6 @@
 {
   "name": "@ncs_software/widget-system-angular",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Angular 17+ components and services for @ncs_software/widget-system",
   "type": "module",
   "exports": {
@@ -9,7 +9,9 @@
       "default": "./dist/fesm2022/ncs_software-widget-system-angular.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "ng-packagr -p ng-package.json",
     "test": "echo 'Angular tests — add ng test'",
@@ -33,7 +35,11 @@
     "@angular/compiler-cli": "^19.2.0",
     "ng-packagr": "^19.2.0"
   },
-  "keywords": ["angular", "widget", "workspace"],
+  "keywords": [
+    "angular",
+    "widget",
+    "workspace"
+  ],
   "license": "AGPL-3.0-or-later",
   "publishConfig": {
     "access": "public"

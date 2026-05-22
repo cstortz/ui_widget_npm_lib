@@ -1,5 +1,16 @@
 # @ncs_software/widget-system-react
 
+## 2.0.0
+
+### Minor Changes
+
+- 9abf75e: Implement the Angular widget system library (layout components, WidgetStateService, workspace shell) and replace the demo-angular placeholder with a two-panel workspace demo using Notes and Checklist widgets.
+
+### Patch Changes
+
+- Updated dependencies [9abf75e]
+  - @ncs_software/widget-system@2.0.0
+
 ## 1.0.0
 
 ### Patch Changes

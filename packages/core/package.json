@@ -1,6 +1,6 @@
 {
   "name": "@ncs_software/widget-system",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Framework-agnostic widget layout core — pure TypeScript, zero dependencies",
   "type": "module",
   "main": "./dist/index.js",
