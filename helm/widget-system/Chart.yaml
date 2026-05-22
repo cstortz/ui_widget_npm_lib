@@ -1,0 +1,11 @@
+apiVersion: v2
+name: widget-system
+description: Helm chart for widget-system demo apps and supporting services
+type: application
+version: 0.1.0
+appVersion: "0.0.1"
+keywords:
+  - widget-system
+  - demo
+maintainers:
+  - name: cstortz

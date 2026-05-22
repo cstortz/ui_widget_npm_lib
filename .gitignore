@@ -1,0 +1,22 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.turbo/
+.nx/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
+*.local
+
+# Demo app build output
+apps/*/dist/
+apps/*/.angular/
+
+# Helm
+helm/**/charts/
+*.tgz

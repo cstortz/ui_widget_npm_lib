@@ -1,0 +1,2 @@
+# Build context is repo root
+# docker build -f apps/demo-angular/Dockerfile .

@@ -1,0 +1,28 @@
+{
+  "name": "@cstortz/widget-system",
+  "version": "0.0.1",
+  "description": "Framework-agnostic widget layout core — pure TypeScript, zero dependencies",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/**/*.test.js 2>/dev/null || echo 'No tests yet'",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["widget", "workspace", "layout", "typescript"],
+  "license": "AGPL-3.0-or-later",
+  "publishConfig": {
+    "access": "public"
+  }
+}

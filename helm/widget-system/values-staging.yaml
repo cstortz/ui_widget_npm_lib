@@ -1,0 +1,22 @@
+global:
+  imageTag: staging
+
+demoAngular:
+  replicaCount: 2
+
+demoReact:
+  replicaCount: 2
+
+ingress:
+  hosts:
+    - host: widget-system.staging.example.com
+      paths:
+        - path: /angular
+          pathType: Prefix
+          service: demo-angular
+        - path: /react
+          pathType: Prefix
+          service: demo-react
+        - path: /
+          pathType: Prefix
+          service: demo-angular

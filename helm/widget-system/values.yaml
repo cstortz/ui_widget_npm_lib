@@ -1,0 +1,59 @@
+global:
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+
+namespace:
+  create: true
+  name: widget-system
+
+demoAngular:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cstortz/ui_widget_npm_lib/demo-angular
+    tag: ""
+  service:
+    port: 80
+    targetPort: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+demoReact:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/cstortz/ui_widget_npm_lib/demo-react
+    tag: ""
+  service:
+    port: 80
+    targetPort: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: widget-system.local
+      paths:
+        - path: /angular
+          pathType: Prefix
+          service: demo-angular
+        - path: /react
+          pathType: Prefix
+          service: demo-react
+        - path: /
+          pathType: Prefix
+          service: demo-angular

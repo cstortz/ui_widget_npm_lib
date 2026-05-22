@@ -1,0 +1,23 @@
+global:
+  imageTag: dev
+  imagePullPolicy: Always
+
+demoAngular:
+  replicaCount: 1
+
+demoReact:
+  replicaCount: 1
+
+ingress:
+  hosts:
+    - host: widget-system.dev.local
+      paths:
+        - path: /angular
+          pathType: Prefix
+          service: demo-angular
+        - path: /react
+          pathType: Prefix
+          service: demo-react
+        - path: /
+          pathType: Prefix
+          service: demo-angular

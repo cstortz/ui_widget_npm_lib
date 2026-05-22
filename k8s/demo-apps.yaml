@@ -1,0 +1,118 @@
+# Raw kubectl manifests for local dev (without Helm).
+# Prefer: ./scripts/deploy.sh helm
+#
+# Apply order:
+#   kubectl apply -f k8s/namespace.yaml
+#   kubectl apply -f k8s/
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-angular
+  namespace: widget-system
+  labels:
+    app.kubernetes.io/name: demo-angular
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: demo-angular
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: demo-angular
+    spec:
+      containers:
+        - name: demo-angular
+          image: widget-system/demo-angular:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-angular
+  namespace: widget-system
+spec:
+  selector:
+    app.kubernetes.io/name: demo-angular
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-react
+  namespace: widget-system
+  labels:
+    app.kubernetes.io/name: demo-react
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: demo-react
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: demo-react
+    spec:
+      containers:
+        - name: demo-react
+          image: widget-system/demo-react:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-react
+  namespace: widget-system
+spec:
+  selector:
+    app.kubernetes.io/name: demo-react
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP

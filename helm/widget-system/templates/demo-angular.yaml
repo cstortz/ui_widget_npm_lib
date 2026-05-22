@@ -1,0 +1,61 @@
+{{- if .Values.demoAngular.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-angular
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "widget-system.labels" . | nindent 4 }}
+    app.kubernetes.io/name: demo-angular
+    app.kubernetes.io/component: demo
+spec:
+  replicas: {{ .Values.demoAngular.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: demo-angular
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: demo-angular
+        app.kubernetes.io/component: demo
+    spec:
+      containers:
+        - name: demo-angular
+          image: "{{ .Values.demoAngular.image.repository }}:{{ .Values.demoAngular.image.tag | default (include "widget-system.imageTag" .) }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.demoAngular.service.targetPort }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.demoAngular.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-angular
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "widget-system.labels" . | nindent 4 }}
+    app.kubernetes.io/name: demo-angular
+spec:
+  selector:
+    app.kubernetes.io/name: demo-angular
+  ports:
+    - port: {{ .Values.demoAngular.service.port }}
+      targetPort: {{ .Values.demoAngular.service.targetPort }}
+      protocol: TCP
+      name: http
+  type: ClusterIP
+{{- end }}
