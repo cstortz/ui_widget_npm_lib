@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: widget-system.int.stortz.tech
+    - host: widget-system.dev.stortz.tech
       http:
         paths:
           - path: /angular

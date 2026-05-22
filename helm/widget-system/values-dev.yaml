@@ -16,7 +16,7 @@ ingress:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
   hosts:
-    - host: widget-system.int.stortz.tech
+    - host: widget-system.dev.stortz.tech
       paths:
         - path: /angular(/|$)(.*)
           pathType: ImplementationSpecific

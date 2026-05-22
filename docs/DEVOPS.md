@@ -185,10 +185,15 @@ Verify:
 
 ```bash
 kubectl get all -n widget-system
-curl http://widget-system.int.stortz.tech/angular
+curl http://widget-system.dev.stortz.tech/angular
 ```
 
-Point internal DNS `widget-system.int.stortz.tech` at your ingress controller IP.
+Point internal DNS at your ingress controller IP:
+
+| Environment | Hostname |
+|-------------|----------|
+| dev | `widget-system.dev.stortz.tech` → ingress IP (zone: `dev.stortz.tech`) |
+| prod | `widget-system.int.stortz.tech` → ingress IP (zone: `int.stortz.tech`) |
 
 ## Deploy with kubectl (raw manifests)
 
@@ -215,7 +220,8 @@ kind load docker-image widget-system/demo-react:latest
 | File | Environment | Notes |
 |------|-------------|-------|
 | `values.yaml` | Base defaults | Shared config |
-| `values-dev.yaml` | Development | Single replica, `widget-system.int.stortz.tech` |
+| `values-dev.yaml` | Development | `widget-system.dev.stortz.tech` |
+| `values-prod.yaml` | Production | `widget-system.int.stortz.tech` |
 | `values-staging.yaml` | Staging | 2 replicas |
 | `values-prod.yaml` | Production | 3 replicas, TLS via cert-manager |
 

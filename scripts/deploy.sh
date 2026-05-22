@@ -171,4 +171,4 @@ case "$MODE" in
 esac
 
 echo ""
-echo "Done. http://widget-system.int.stortz.tech/"
+echo "Done. Dev: http://widget-system.dev.stortz.tech/  Prod: http://widget-system.int.stortz.tech/"

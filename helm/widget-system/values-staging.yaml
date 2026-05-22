@@ -9,7 +9,7 @@ demoReact:
 
 ingress:
   hosts:
-    - host: widget-system.staging.int.stortz.tech
+    - host: widget-system.staging.dev.stortz.tech
       paths:
         - path: /angular
           pathType: Prefix

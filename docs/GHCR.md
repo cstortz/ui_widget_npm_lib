@@ -86,7 +86,7 @@ IMAGE_TAG=abc123def ./scripts/deploy.sh ghcr dev
 ```bash
 kubectl get pods -n widget-system -o wide
 kubectl describe pod -n widget-system -l app.kubernetes.io/name=demo-angular | grep -i image
-curl -I http://widget-system.int.stortz.tech/
+curl -I http://widget-system.dev.stortz.tech/
 ```
 
 Pods should show:
