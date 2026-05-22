@@ -1,15 +1,13 @@
 name: Publish to npm (manual)
 
-# Use when Release workflow cannot open a PR. Run after versioning locally:
-#   npm run version-packages
-#   git add . && git commit -m "chore: version packages" && git push
-# Then trigger this workflow, OR run: npm run release (with NPM_TOKEN set)
+# Run after version packages are on main (no pending .changeset/*.md files).
+# Requires NPM_TOKEN secret with publish access to @ncs_software org.
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -19,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,8 +27,21 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      - name: Verify npm token
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::NPM_TOKEN secret is empty. Add an Automation token for the ncs_software org."
+            exit 1
+          fi
+          echo "npm user: $(npm whoami)"
+          npm access ls-packages "$(npm whoami)" 2>/dev/null | head -20 || true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Install dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Build
         run: npm run build
@@ -37,3 +50,7 @@ jobs:
         run: npm run release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push release tags
+        run: git push origin --tags
