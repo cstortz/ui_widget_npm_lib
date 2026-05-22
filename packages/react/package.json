@@ -1,11 +1,13 @@
 {
   "name": "@cstortz/widget-system-react",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "React 18+ components and hooks for @cstortz/widget-system",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "echo 'React tests — add vitest'",
@@ -19,7 +21,11 @@
   "dependencies": {
     "@cstortz/widget-system": "*"
   },
-  "keywords": ["react", "widget", "workspace"],
+  "keywords": [
+    "react",
+    "widget",
+    "workspace"
+  ],
   "license": "AGPL-3.0-or-later",
   "publishConfig": {
     "access": "public"
