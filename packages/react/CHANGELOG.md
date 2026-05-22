@@ -1,5 +1,11 @@
 # @ncs_software/widget-system-react
 
+## 1.2.0
+
+### Minor Changes
+
+- 376c844: Implement React workspace layout components, WidgetStateProvider hook, and replace demo-react placeholder with a full Vite demo app.
+
 ## 1.1.0
 
 ### Minor Changes
