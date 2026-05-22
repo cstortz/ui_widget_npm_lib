@@ -1,0 +1,39 @@
+name: Publish to npm (manual)
+
+# Use when Release workflow cannot open a PR. Run after versioning locally:
+#   npm run version-packages
+#   git add . && git commit -m "chore: version packages" && git push
+# Then trigger this workflow, OR run: npm run release (with NPM_TOKEN set)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish packages
+        run: npm run release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+# Requires repo setting: Settings → Actions → General →
+# "Allow GitHub Actions to create and approve pull requests"
+# OR add a GH_PAT secret (classic PAT with repo + pull_requests scope).
 permissions:
   contents: write
   pull-requests: write
@@ -12,7 +15,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Only run when changesets exist or version PR was merged
     if: github.repository == 'cstortz/ui_widget_npm_lib'
 
     steps:
@@ -39,5 +41,6 @@ jobs:
           title: "chore: version packages"
           commit: "chore: version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GH_PAT bypasses the "Actions cannot create PRs" restriction when set.
+          GITHUB_TOKEN: ${{ secrets.GH_PAT != '' && secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

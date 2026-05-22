@@ -43,12 +43,37 @@ publish npm packages:
 - `@cstortz/widget-system-angular`
 - `@cstortz/widget-system-react`
 
-**Required secret:** `NPM_TOKEN` — npm automation token with publish access.
+**Required secrets:**
+- `NPM_TOKEN` — npm automation token with publish access
+- `GH_PAT` (optional) — GitHub PAT if Actions cannot create PRs (see below)
 
 Workflow:
 1. Developer runs `npm run changeset` and commits the changeset file
 2. On merge to `main`, the action opens a "Version Packages" PR
 3. Merging that PR triggers `npm run release` to publish
+
+#### Fix: "Actions is not permitted to create or approve pull requests"
+
+Enable in **Settings → Actions → General → Workflow permissions**:
+
+1. Select **Read and write permissions**
+2. Check **Allow GitHub Actions to create and approve pull requests**
+
+Then re-run the failed Release workflow (Actions → Release → Re-run jobs).
+
+**Alternative:** Add a classic PAT as secret `GH_PAT` with `repo` scope. The
+Release workflow uses `GH_PAT` when present instead of `GITHUB_TOKEN`.
+
+**Fallback (no PR):** Version locally, push, then publish manually:
+
+```bash
+npm run version-packages
+git add . && git commit -m "chore: version packages" && git push origin main
+```
+
+Then either:
+- Actions → **Publish to npm (manual)** → Run workflow, or
+- Locally: `NPM_TOKEN=... npm run release`
 
 ### Deploy (`deploy.yml`)
 
@@ -72,9 +97,13 @@ approval gates for prod.
 3. Enable GitHub Packages for container images
 4. Add repository secrets:
    - `NPM_TOKEN` — for npm publish
+   - `GH_PAT` — (optional) classic PAT with `repo` scope if Release cannot open PRs
    - `KUBE_CONFIG` — base64 kubeconfig: `cat ~/.kube/config | base64 -w0`
-5. Create GitHub Environments: `dev`, `staging`, `prod`
-6. (Optional) Add branch protection on `main`
+5. **Settings → Actions → General → Workflow permissions:**
+   - Read and write permissions
+   - ✅ Allow GitHub Actions to create and approve pull requests
+6. Create GitHub Environments: `dev`, `staging`, `prod`
+7. (Optional) Add branch protection on `main`
 
 ## Local development
 
