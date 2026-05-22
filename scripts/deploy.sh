@@ -32,12 +32,15 @@ Examples:
 EOF
 }
 
-build_images() {
-  echo "==> Building demo assets..."
-  npm ci
+build_demo_app() {
+  echo "==> Building demo Angular app..."
+  npm run build -w @ncs_software/widget-system
+  npm run build -w @ncs_software/widget-system-angular
   npm run build --workspace=demo-angular
-  npm run build --workspace=demo-react
+}
 
+build_local_docker_images() {
+  build_demo_app
   echo "==> Building Docker images..."
   docker build -f apps/demo-angular/Dockerfile -t "widget-system/demo-angular:${IMAGE_TAG}" .
   docker build -f apps/demo-react/Dockerfile -t "widget-system/demo-react:${IMAGE_TAG}" .
@@ -125,7 +128,7 @@ deploy_helm() {
 }
 
 deploy_kubectl() {
-  build_images
+  build_local_docker_images
   load_images_to_cluster
 
   kubectl apply -f k8s/namespace.yaml
@@ -148,7 +151,7 @@ case "$MODE" in
     deploy_helm ghcr
     ;;
   helm-local)
-    build_images
+    build_local_docker_images
     load_images_to_cluster
     deploy_helm local
     ;;

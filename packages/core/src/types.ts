@@ -1,6 +1,20 @@
 /** Shared types for @ncs_software/widget-system */
 
-export type WidgetId = string;
+/** Known widget IDs — extend the union as new widgets are created */
+export type KnownWidgetId =
+  | 'resume-panel'
+  | 'application-guide'
+  | 'chat'
+  | 'skills-panel'
+  | 'fit-rankings'
+  | 'skill-plans'
+  | 'job-sites'
+  | 'improvement-tracker'
+  | 'demo-notes'
+  | 'demo-checklist';
+
+/** Widget type id — known ids plus custom string ids from consumer apps */
+export type WidgetId = KnownWidgetId | (string & {});
 
 export type PanelPosition = 'primary' | 'secondary';
 export type PanelOrder = 'primary-left' | 'primary-right';

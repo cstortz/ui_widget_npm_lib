@@ -1,7 +1,7 @@
 FROM nginx:1.27-alpine
 
 COPY apps/demo-angular/nginx.conf /etc/nginx/conf.d/default.conf
-COPY apps/demo-angular/dist /usr/share/nginx/html
+COPY apps/demo-angular/dist/browser /usr/share/nginx/html
 
 EXPOSE 8080
 

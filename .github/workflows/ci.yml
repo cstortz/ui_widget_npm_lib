@@ -53,6 +53,7 @@ jobs:
       - name: Build demo assets
         run: |
           npm ci
+          npm run build -w @ncs_software/widget-system-angular
           npm run build --workspace=demo-angular
           npm run build --workspace=demo-react
 
