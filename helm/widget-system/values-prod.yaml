@@ -12,7 +12,7 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: widget-system.example.com
+    - host: widget-system.stortz.tech
       paths:
         - path: /angular
           pathType: Prefix
@@ -26,4 +26,4 @@ ingress:
   tls:
     - secretName: widget-system-tls
       hosts:
-        - widget-system.example.com
+        - widget-system.stortz.tech

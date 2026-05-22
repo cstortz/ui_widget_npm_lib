@@ -94,5 +94,4 @@ case "$MODE" in
 esac
 
 echo ""
-echo "Done. Add to /etc/hosts if needed:"
-echo "  127.0.0.1 widget-system.local widget-system.dev.local"
+echo "Done. Ensure internal DNS resolves widget-system.stortz.tech to your ingress IP."

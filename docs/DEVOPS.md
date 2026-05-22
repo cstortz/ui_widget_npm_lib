@@ -180,14 +180,10 @@ Verify:
 
 ```bash
 kubectl get all -n widget-system
-curl -H "Host: widget-system.dev.local" http://localhost/angular
+curl http://widget-system.stortz.tech/angular
 ```
 
-Add to `/etc/hosts` if using a local cluster (minikube, kind, k3s):
-
-```
-127.0.0.1 widget-system.local widget-system.dev.local
-```
+Point internal DNS `widget-system.stortz.tech` at your ingress controller IP.
 
 ## Deploy with kubectl (raw manifests)
 
@@ -214,7 +210,7 @@ kind load docker-image widget-system/demo-react:latest
 | File | Environment | Notes |
 |------|-------------|-------|
 | `values.yaml` | Base defaults | Shared config |
-| `values-dev.yaml` | Development | Single replica, `widget-system.dev.local` |
+| `values-dev.yaml` | Development | Single replica, `widget-system.stortz.tech` |
 | `values-staging.yaml` | Staging | 2 replicas |
 | `values-prod.yaml` | Production | 3 replicas, TLS via cert-manager |
 
