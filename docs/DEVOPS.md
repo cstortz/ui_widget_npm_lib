@@ -1,5 +1,8 @@
 # Widget System — DevOps Guide
 
+Detailed reference for GitHub Actions, Helm, and kubectl. **Start with the
+[README](../README.md)** for the full operational overview.
+
 This document covers GitHub Actions, Helm, and kubectl workflows for the
 `ui_widget_npm_lib` monorepo.
 
@@ -172,8 +175,8 @@ npm run test
 ```bash
 chmod +x scripts/deploy.sh scripts/undeploy.sh
 
-# Build images and deploy to dev
-./scripts/deploy.sh helm dev
+# Build images and deploy to dev (GHCR)
+./scripts/deploy.sh ghcr dev
 
 # Custom tag
 IMAGE_TAG=$(git rev-parse --short HEAD) ./scripts/deploy.sh ghcr dev
@@ -222,8 +225,8 @@ kind load docker-image widget-system/demo-react:latest
 | `values.yaml` | Base defaults | Shared config |
 | `values-dev.yaml` | Development | `widget-system.dev.stortz.tech` |
 | `values-prod.yaml` | Production | `widget-system.int.stortz.tech` |
-| `values-staging.yaml` | Staging | 2 replicas |
-| `values-prod.yaml` | Production | 3 replicas, TLS via cert-manager |
+| `values-staging.yaml` | Staging | `widget-system.staging.dev.stortz.tech`, 2 replicas |
+| `values-prod.yaml` | Production | `widget-system.int.stortz.tech`, 3 replicas, TLS |
 
 Override at deploy time:
 
@@ -271,8 +274,8 @@ Future additions (when the widget state API backend is built):
 |---------|-----|
 | `npm ci` fails in CI | Run `npm install` locally and commit `package-lock.json` |
 | Image pull errors | See [GHCR.md](GHCR.md) — public packages or `setup-ghcr-secret.sh` |
-| Ingress 404 | Check `/etc/hosts`, ingress controller installed, and host in values |
-| Helm `--wait` timeout | `kubectl describe pod -n widget-system` for events |
+| Ingress 404 / page not loading | Run `./scripts/debug-ingress.sh`; verify DNS → ingress IP (see [README](../README.md)) |
+| Helm `--wait` timeout / stuck pending | `./scripts/fix-helm-stuck.sh` then redeploy |
 | NPM publish E404 on `@ncs_software/*` | Your npm account must **own the `@ncs_software` scope** — see below |
 
 ### npm publish E404 — scope ownership
