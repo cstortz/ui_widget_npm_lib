@@ -1,0 +1,67 @@
+/** Shared types for @cstortz/widget-system */
+
+export type WidgetId = string;
+
+export type PanelPosition = 'primary' | 'secondary';
+export type PanelOrder = 'primary-left' | 'primary-right';
+
+export interface WidgetMeta {
+  widgetId: WidgetId;
+  displayName: string;
+  description: string;
+  minWidthPx: number;
+  canCollapse: boolean;
+}
+
+export interface WidgetConfig {
+  widgetId: WidgetId;
+  position: PanelPosition;
+  contextId: string | null;
+  collapsed: boolean;
+}
+
+export interface WidgetState<T = Record<string, unknown>> {
+  widgetId: WidgetId;
+  contextId: string | null;
+  payload: T;
+  savedAt: Date;
+}
+
+export type WorkspaceContextType = 'job-application' | 'general';
+
+export interface WorkspaceConfig {
+  id: string;
+  userId: string;
+  name: string;
+  contextType: WorkspaceContextType;
+  contextId: string | null;
+  panelOrder: PanelOrder;
+  widgets: WidgetConfig[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Widget-specific state shapes (extend in consumer apps) */
+export interface ResumePanelState {
+  selectedResumeVersionId: string | null;
+  expandedSections: string[];
+  scrollTop: number;
+}
+
+export interface ApplicationGuideState {
+  activeSection: string | null;
+  checkedItems: string[];
+  usedAnswerIds: string[];
+  expandedSections: string[];
+}
+
+export interface HttpWidgetStateAdapterOptions {
+  baseUrl: string;
+  getAuthToken?: () => string | null | Promise<string | null>;
+  fetchFn?: typeof fetch;
+}
+
+export interface LocalStorageWidgetStateAdapterOptions {
+  storageKeyPrefix?: string;
+  storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+}

@@ -1,18 +1,10 @@
-import type {
-  WidgetId,
-  WidgetState,
-  WidgetStateAdapter,
-  WorkspaceConfig,
-} from '../index.js';
+import type { WidgetId, WidgetState, WorkspaceConfig, WorkspaceContextType } from '../types.js';
+import { stateKey, type WidgetStateAdapter } from './adapter-contract.js';
 
 /** In-memory adapter for tests, Storybook, and sandboxed demos */
 export class MemoryWidgetStateAdapter implements WidgetStateAdapter {
   private states = new Map<string, WidgetState>();
   private workspaces = new Map<string, WorkspaceConfig>();
-
-  private stateKey(widgetId: WidgetId, contextId: string | null): string {
-    return `${widgetId}:${contextId ?? 'global'}`;
-  }
 
   async saveState<T>(
     widgetId: WidgetId,
@@ -25,7 +17,7 @@ export class MemoryWidgetStateAdapter implements WidgetStateAdapter {
       payload,
       savedAt: new Date(),
     };
-    this.states.set(this.stateKey(widgetId, contextId), state as WidgetState);
+    this.states.set(stateKey(widgetId, contextId), state as WidgetState);
     return state;
   }
 
@@ -33,19 +25,45 @@ export class MemoryWidgetStateAdapter implements WidgetStateAdapter {
     widgetId: WidgetId,
     contextId: string | null
   ): Promise<WidgetState<T> | null> {
-    return (this.states.get(this.stateKey(widgetId, contextId)) as WidgetState<T>) ?? null;
+    return (this.states.get(stateKey(widgetId, contextId)) as WidgetState<T>) ?? null;
   }
 
   async clearState(widgetId: WidgetId, contextId: string | null): Promise<void> {
-    this.states.delete(this.stateKey(widgetId, contextId));
+    this.states.delete(stateKey(widgetId, contextId));
   }
 
   async saveWorkspace(workspace: WorkspaceConfig): Promise<WorkspaceConfig> {
-    this.workspaces.set(workspace.id, workspace);
-    return workspace;
+    const saved: WorkspaceConfig = {
+      ...workspace,
+      updatedAt: new Date(),
+    };
+    this.workspaces.set(saved.id, saved);
+    return saved;
   }
 
   async loadWorkspace(workspaceId: string): Promise<WorkspaceConfig | null> {
     return this.workspaces.get(workspaceId) ?? null;
+  }
+
+  async loadWorkspaceByContext(
+    contextType: WorkspaceContextType,
+    contextId: string
+  ): Promise<WorkspaceConfig | null> {
+    for (const workspace of this.workspaces.values()) {
+      if (workspace.contextType === contextType && workspace.contextId === contextId) {
+        return workspace;
+      }
+    }
+    return null;
+  }
+
+  async listWorkspaces(): Promise<WorkspaceConfig[]> {
+    return [...this.workspaces.values()].sort(
+      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
+    );
+  }
+
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    this.workspaces.delete(workspaceId);
   }
 }
