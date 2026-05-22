@@ -1,4 +1,4 @@
-# @cstortz/widget-system-angular
+# @ncs_software/widget-system-angular
 
 ## 1.0.0
 
@@ -7,4 +7,4 @@
 - c1ccc6a: Initial monorepo scaffold with core types, DevOps pipeline, and demo app placeholders.
 - Updated dependencies [e13c2c3]
 - Updated dependencies [c1ccc6a]
-  - @cstortz/widget-system@1.0.0
+  - @ncs_software/widget-system@1.0.0

@@ -1,7 +1,7 @@
 {
-  "name": "@cstortz/widget-system-react",
+  "name": "@ncs_software/widget-system-react",
   "version": "1.0.0",
-  "description": "React 18+ components and hooks for @cstortz/widget-system",
+  "description": "React 18+ components and hooks for @ncs_software/widget-system",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,10 +16,10 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@cstortz/widget-system": "*"
+    "@ncs_software/widget-system": "*"
   },
   "dependencies": {
-    "@cstortz/widget-system": "*"
+    "@ncs_software/widget-system": "*"
   },
   "keywords": [
     "react",

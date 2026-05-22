@@ -1,4 +1,4 @@
-# @cstortz/widget-system
+# @ncs_software/widget-system
 
 Framework-agnostic widget layout system for web applications. Install once, use
 in Angular, React, Vue, or plain HTML.
@@ -10,9 +10,9 @@ in Angular, React, Vue, or plain HTML.
 
 | Package | Description |
 |---------|-------------|
-| `@cstortz/widget-system` | Pure TypeScript core — types, state machine, pluggable adapters |
-| `@cstortz/widget-system-angular` | Angular 17+ standalone components and services |
-| `@cstortz/widget-system-react` | React 18+ components and hooks |
+| `@ncs_software/widget-system` | Pure TypeScript core — types, state machine, pluggable adapters |
+| `@ncs_software/widget-system-angular` | Angular 17+ standalone components and services |
+| `@ncs_software/widget-system-react` | React 18+ components and hooks |
 
 ## Quick start
 
@@ -25,16 +25,16 @@ npm run test
 Install in a consumer project (once published):
 
 ```bash
-npm install @cstortz/widget-system-angular
+npm install @ncs_software/widget-system-angular
 ```
 
 ## Monorepo structure
 
 ```
 packages/
-  core/       @cstortz/widget-system
-  angular/    @cstortz/widget-system-angular
-  react/      @cstortz/widget-system-react
+  core/       @ncs_software/widget-system
+  angular/    @ncs_software/widget-system-angular
+  react/      @ncs_software/widget-system-react
 apps/
   demo-angular/   Demo app (deployed to k8s)
   demo-react/     Demo app (deployed to k8s)

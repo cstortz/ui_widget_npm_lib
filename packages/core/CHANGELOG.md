@@ -1,4 +1,4 @@
-# @cstortz/widget-system
+# @ncs_software/widget-system
 
 ## 1.0.0
 

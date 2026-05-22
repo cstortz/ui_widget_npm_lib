@@ -39,9 +39,9 @@ Runs on every push and pull request to `main`:
 Uses [Changesets](https://github.com/changesets/changesets) to version and
 publish npm packages:
 
-- `@cstortz/widget-system`
-- `@cstortz/widget-system-angular`
-- `@cstortz/widget-system-react`
+- `@ncs_software/widget-system`
+- `@ncs_software/widget-system-angular`
+- `@ncs_software/widget-system-react`
 
 **Required secrets:**
 - `NPM_TOKEN` — npm automation token with publish access
@@ -220,7 +220,7 @@ Future additions (when the widget state API backend is built):
 | Image pull errors | Ensure GHCR package visibility or use local images with `kubectl` mode |
 | Ingress 404 | Check `/etc/hosts`, ingress controller installed, and host in values |
 | Helm `--wait` timeout | `kubectl describe pod -n widget-system` for events |
-| NPM publish E404 on `@cstortz/*` | Your npm account must **own the `@cstortz` scope** — see below |
+| NPM publish E404 on `@ncs_software/*` | Your npm account must **own the `@ncs_software` scope** — see below |
 
 ### npm publish E404 — scope ownership
 
@@ -250,11 +250,11 @@ update the repo if you want this.
 If using a fine-grained token, it must include:
 
 - **Packages and scopes:** Read and write
-- **Organizations:** access to `@cstortz` (or select the org)
+- **Organizations:** access to `@ncs_software` (or select the org)
 
 **Verify locally before CI:**
 
 ```bash
-npm whoami                    # must show the account that owns @cstortz
-npm publish --dry-run --workspace=@cstortz/widget-system
+npm whoami                    # must show the account that owns @ncs_software
+npm publish --dry-run --workspace=@ncs_software/widget-system
 ```

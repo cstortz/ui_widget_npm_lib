@@ -1,7 +1,7 @@
 {
-  "name": "@cstortz/widget-system-angular",
+  "name": "@ncs_software/widget-system-angular",
   "version": "1.0.0",
-  "description": "Angular 17+ components and services for @cstortz/widget-system",
+  "description": "Angular 17+ components and services for @ncs_software/widget-system",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,10 +16,10 @@
   },
   "peerDependencies": {
     "@angular/core": ">=17",
-    "@cstortz/widget-system": "*"
+    "@ncs_software/widget-system": "*"
   },
   "dependencies": {
-    "@cstortz/widget-system": "*"
+    "@ncs_software/widget-system": "*"
   },
   "keywords": [
     "angular",

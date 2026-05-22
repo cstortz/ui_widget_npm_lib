@@ -1,4 +1,4 @@
-/** Shared types for @cstortz/widget-system */
+/** Shared types for @ncs_software/widget-system */
 
 export type WidgetId = string;
 

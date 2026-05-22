@@ -4,7 +4,7 @@
   "commit": false,
   "fixed": [],
   "linked": [
-    ["@cstortz/widget-system", "@cstortz/widget-system-angular", "@cstortz/widget-system-react"]
+    ["@ncs_software/widget-system", "@ncs_software/widget-system-angular", "@ncs_software/widget-system-react"]
   ],
   "access": "public",
   "baseBranch": "main",
