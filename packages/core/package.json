@@ -14,7 +14,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && tsc -p tsconfig.test.json && node --test dist-test/**/*.test.js",
+    "test": "npm run build && tsc -p tsconfig.test.json && node --test $(find dist-test -name '*.test.js' | sort)",
     "lint": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist dist-test"
   },
