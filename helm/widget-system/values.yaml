@@ -1,6 +1,7 @@
 global:
   imageTag: latest
   imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
 
 namespace:
   create: true

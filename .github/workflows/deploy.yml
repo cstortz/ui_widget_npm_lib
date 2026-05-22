@@ -96,6 +96,9 @@ jobs:
     runs-on: self-hosted
     needs: build-and-push
     environment: ${{ github.event.inputs.environment || 'dev' }}
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout
@@ -138,6 +141,16 @@ jobs:
           echo "Using kubectl context: $(kubectl config current-context)"
           kubectl cluster-info
 
+      - name: Create GHCR pull secret
+        run: |
+          kubectl create namespace widget-system --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
+            --namespace=widget-system \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Deploy with Helm
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"
@@ -150,14 +163,21 @@ jobs:
           elif [ "$ENV" = "prod" ]; then
             VALUES="$VALUES -f helm/widget-system/values-prod.yaml"
           fi
-          helm upgrade --install widget-system helm/widget-system \
+          if ! helm upgrade --install widget-system helm/widget-system \
             $VALUES \
             --namespace widget-system \
             --create-namespace \
             --set global.imageTag="$TAG" \
             --set demoAngular.image.repository="${{ env.IMAGE_PREFIX }}/demo-angular" \
             --set demoReact.image.repository="${{ env.IMAGE_PREFIX }}/demo-react" \
-            --wait --timeout 5m
+            --wait --timeout 5m; then
+            echo "::group::Pod diagnostics"
+            kubectl get pods -n widget-system -o wide
+            kubectl describe pods -n widget-system | tail -80
+            kubectl get events -n widget-system --sort-by='.lastTimestamp' | tail -20
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Verify deployment
         run: |

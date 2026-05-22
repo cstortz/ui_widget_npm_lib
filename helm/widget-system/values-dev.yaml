@@ -1,6 +1,8 @@
 global:
   imageTag: dev
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: ghcr-pull
 
 demoAngular:
   replicaCount: 1

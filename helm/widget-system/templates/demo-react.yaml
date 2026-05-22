@@ -19,6 +19,10 @@ spec:
         app.kubernetes.io/name: demo-react
         app.kubernetes.io/component: demo
     spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: demo-react
           image: "{{ .Values.demoReact.image.repository }}:{{ .Values.demoReact.image.tag | default (include "widget-system.imageTag" .) }}"
