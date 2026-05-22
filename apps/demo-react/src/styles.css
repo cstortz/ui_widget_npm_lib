@@ -1,0 +1,82 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-header {
+  padding: 0.75rem 1.25rem;
+  background: #1976d2;
+  color: #fff;
+}
+
+.demo-header h1 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.demo-header p {
+  margin: 0.25rem 0 0;
+  opacity: 0.9;
+  font-size: 0.875rem;
+}
+
+.demo-main {
+  flex: 1;
+  min-height: 0;
+  padding: 0.75rem;
+}
+
+.workspace-page {
+  height: 100%;
+}
+
+.demo-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-notes__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.demo-notes__field {
+  width: 100%;
+  padding: 0.5rem;
+  font: inherit;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.demo-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.demo-checklist li {
+  margin-bottom: 0.5rem;
+}
+
+.demo-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}

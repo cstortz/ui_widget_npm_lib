@@ -1,2 +1,11 @@
-/** React wrapper — stub; see Widget-System-Library.pptx for full implementation */
-export const WIDGET_SYSTEM_REACT_VERSION = '0.0.1';
+export { WidgetStateService } from './widget-state-service.js';
+export { WidgetStateProvider, useWidgetStateService } from './widget-state-context.js';
+export type { WidgetStateProviderProps } from './widget-state-context.js';
+export { SwapButton } from './components/SwapButton.js';
+export type { SwapButtonProps } from './components/SwapButton.js';
+export { WidgetPanel } from './components/WidgetPanel.js';
+export type { WidgetPanelProps } from './components/WidgetPanel.js';
+export { WorkspaceLayout } from './components/WorkspaceLayout.js';
+export type { WorkspaceLayoutProps } from './components/WorkspaceLayout.js';
+export { WorkspaceShell } from './components/WorkspaceShell.js';
+export type { WorkspaceShellProps } from './components/WorkspaceShell.js';

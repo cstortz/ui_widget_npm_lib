@@ -3,13 +3,17 @@
   "version": "1.1.0",
   "description": "React 18+ components and hooks for @ncs_software/widget-system",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && mkdir -p dist/components && cp src/components/*.css dist/components/",
     "test": "echo 'React tests — add vitest'",
     "lint": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist"
@@ -20,6 +24,13 @@
   },
   "dependencies": {
     "@ncs_software/widget-system": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
   },
   "keywords": [
     "react",

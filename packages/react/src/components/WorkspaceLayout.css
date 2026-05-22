@@ -1,0 +1,51 @@
+.wdg-workspace-layout {
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr;
+  grid-template-areas: 'primary swap secondary';
+  height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.wdg-workspace-layout--swapped {
+  grid-template-areas: 'secondary swap primary';
+}
+
+.wdg-workspace-panel {
+  overflow-y: auto;
+  height: 100%;
+  min-width: 320px;
+}
+
+.wdg-workspace-panel--primary {
+  grid-area: primary;
+}
+
+.wdg-workspace-panel--secondary {
+  grid-area: secondary;
+}
+
+.wdg-workspace-swap-column {
+  grid-area: swap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .wdg-workspace-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 48px auto;
+    grid-template-areas:
+      'primary'
+      'swap'
+      'secondary';
+  }
+
+  .wdg-workspace-layout--swapped {
+    grid-template-areas:
+      'secondary'
+      'swap'
+      'primary';
+  }
+}

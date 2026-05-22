@@ -1,0 +1,17 @@
+.wdg-swap-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.wdg-swap-button:hover {
+  background: #f5f5f5;
+}

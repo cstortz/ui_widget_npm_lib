@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build -w @ncs_software/widget-system && npm run build -w @ncs_software/widget-system-angular && npm run build -w @ncs_software/widget-system-react && npm run build -w demo-angular",
+    "build": "npm run build -w @ncs_software/widget-system && npm run build -w @ncs_software/widget-system-angular && npm run build -w @ncs_software/widget-system-react && npm run build -w demo-angular && npm run build -w demo-react",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",

@@ -53,6 +53,7 @@ jobs:
           npm ci
           npm run build -w @ncs_software/widget-system
           npm run build -w @ncs_software/widget-system-angular
+          npm run build -w @ncs_software/widget-system-react
           npm run build --workspace=demo-angular
           npm run build --workspace=demo-react
 
