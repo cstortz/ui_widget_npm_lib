@@ -65,12 +65,14 @@ Full guide: [docs/DEVOPS.md](./docs/DEVOPS.md)
 | `.github/workflows/release.yml` | Changesets → npm publish |
 | `.github/workflows/deploy.yml` | Build images → Helm deploy to k8s |
 
-Local deploy:
+Local deploy (GHCR — all cluster nodes):
 
 ```bash
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh helm dev
+chmod +x scripts/deploy.sh scripts/setup-ghcr-secret.sh
+./scripts/deploy.sh ghcr dev
 ```
+
+See [docs/GHCR.md](./docs/GHCR.md) for registry setup.
 
 ## Releasing
 

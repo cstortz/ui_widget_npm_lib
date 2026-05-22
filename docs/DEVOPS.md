@@ -19,7 +19,8 @@ This document covers GitHub Actions, Helm, and kubectl workflows for the
 .github/workflows/     CI, release, and deploy pipelines
 helm/widget-system/    Helm chart for demo apps
 k8s/                   Raw kubectl manifests (local dev fallback)
-scripts/               deploy.sh, undeploy.sh
+scripts/               deploy.sh, setup-ghcr-secret.sh, undeploy.sh
+docs/GHCR.md           GHCR setup guide
 packages/              npm publishable libraries
 apps/                  Demo apps (deployed to k8s)
 ```
@@ -123,8 +124,10 @@ job uses `runs-on: self-hosted` so it runs on a machine on your network (e.g.
 
 ```bash
 cd ~/repos/ui_widget_npm_lib/ui_widget_npm_lib
-./scripts/deploy.sh helm dev
+./scripts/deploy.sh ghcr dev
 ```
+
+See **[docs/GHCR.md](GHCR.md)** for registry and pull-secret setup.
 
 **Common mistakes**
 
@@ -173,8 +176,10 @@ chmod +x scripts/deploy.sh scripts/undeploy.sh
 ./scripts/deploy.sh helm dev
 
 # Custom tag
-IMAGE_TAG=$(git rev-parse --short HEAD) ./scripts/deploy.sh helm dev
+IMAGE_TAG=$(git rev-parse --short HEAD) ./scripts/deploy.sh ghcr dev
 ```
+
+See **[docs/GHCR.md](GHCR.md)** for registry and pull-secret setup.
 
 Verify:
 
@@ -259,7 +264,7 @@ Future additions (when the widget state API backend is built):
 | Problem | Fix |
 |---------|-----|
 | `npm ci` fails in CI | Run `npm install` locally and commit `package-lock.json` |
-| Image pull errors | Ensure GHCR package visibility or use local images with `kubectl` mode |
+| Image pull errors | See [GHCR.md](GHCR.md) — public packages or `setup-ghcr-secret.sh` |
 | Ingress 404 | Check `/etc/hosts`, ingress controller installed, and host in values |
 | Helm `--wait` timeout | `kubectl describe pod -n widget-system` for events |
 | NPM publish E404 on `@ncs_software/*` | Your npm account must **own the `@ncs_software` scope** — see below |

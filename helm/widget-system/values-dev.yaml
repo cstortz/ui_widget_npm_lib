@@ -1,6 +1,6 @@
 global:
-  imageTag: dev
-  imagePullPolicy: IfNotPresent
+  imageTag: latest
+  imagePullPolicy: Always
   imagePullSecrets:
     - name: ghcr-pull
 
