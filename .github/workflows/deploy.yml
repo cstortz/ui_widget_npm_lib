@@ -159,6 +159,22 @@ jobs:
             --namespace=widget-system \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Clear stuck Helm release
+        run: |
+          if helm status widget-system -n widget-system &>/dev/null; then
+            if helm status widget-system -n widget-system 2>&1 | grep -qiE 'pending-install|pending-upgrade|pending-rollback'; then
+              echo "Rolling back stuck Helm release..."
+              helm rollback widget-system -n widget-system || true
+              kubectl get secrets -n widget-system -l "owner=helm,name=widget-system" -o name \
+                | while read -r s; do
+                    st=$(kubectl get "$s" -n widget-system -o jsonpath='{.metadata.labels.status}' 2>/dev/null || true)
+                    if echo "$st" | grep -qE 'pending-install|pending-upgrade|pending-rollback'; then
+                      kubectl delete "$s" -n widget-system
+                    fi
+                  done
+            fi
+          fi
+
       - name: Deploy with Helm
         run: |
           ENV="${{ github.event.inputs.environment || 'dev' }}"

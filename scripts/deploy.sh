@@ -72,6 +72,11 @@ show_pod_diagnostics() {
 
 deploy_helm() {
   local image_source="$1"  # ghcr | local
+
+  if [ -x "$ROOT/scripts/fix-helm-stuck.sh" ]; then
+    "$ROOT/scripts/fix-helm-stuck.sh" widget-system widget-system || true
+  fi
+
   VALUES="-f helm/widget-system/values.yaml"
   HELM_EXTRA=()
 
