@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-HOST="${1:-widget-system.stortz.tech}"
+HOST="${1:-widget-system.int.stortz.tech}"
 NS="${NS:-widget-system}"
 
 echo "=== DNS ==="

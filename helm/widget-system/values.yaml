@@ -47,7 +47,7 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
   hosts:
-    - host: widget-system.stortz.tech
+    - host: widget-system.int.stortz.tech
       paths:
         - path: /angular
           pathType: Prefix
