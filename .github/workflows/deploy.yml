@@ -106,10 +106,37 @@ jobs:
           version: v3.16.4
 
       - name: Configure kubeconfig
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
         run: |
           mkdir -p "$HOME/.kube"
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > "$HOME/.kube/config"
+
+          if [ -z "$KUBE_CONFIG_DATA" ]; then
+            echo "::error::KUBE_CONFIG secret is empty. Add it under Settings → Secrets → Actions (or the dev environment)."
+            exit 1
+          fi
+
+          # Accept either raw kubeconfig YAML or base64-encoded content
+          if printf '%s' "$KUBE_CONFIG_DATA" | head -1 | grep -qE '^apiVersion:'; then
+            printf '%s' "$KUBE_CONFIG_DATA" > "$HOME/.kube/config"
+          elif printf '%s' "$KUBE_CONFIG_DATA" | tr -d ' \t\r\n' | base64 -d > "$HOME/.kube/config" 2>/dev/null \
+            && [ -s "$HOME/.kube/config" ]; then
+            true
+          else
+            echo "::error::KUBE_CONFIG is not valid. Use base64-encoded kubeconfig or paste raw ~/.kube/config YAML."
+            echo "Linux:  base64 -w0 < ~/.kube/config"
+            echo "macOS:  base64 < ~/.kube/config | tr -d '\\n'"
+            exit 1
+          fi
+
           chmod 600 "$HOME/.kube/config"
+
+          if ! kubectl config current-context >/dev/null 2>&1; then
+            echo "::error::Kubeconfig loaded but no valid context found."
+            exit 1
+          fi
+
+          echo "Using kubectl context: $(kubectl config current-context)"
 
       - name: Deploy with Helm
         run: |

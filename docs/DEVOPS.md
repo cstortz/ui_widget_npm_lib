@@ -84,7 +84,33 @@ via Helm.
 - Manual (`workflow_dispatch`) with environment choice: dev / staging / prod
 - Auto on push to `main` when `apps/`, `helm/`, or the workflow changes
 
-**Required secret:** `KUBE_CONFIG` — base64-encoded kubeconfig for the target cluster.
+**Required secret:** `KUBE_CONFIG` — kubeconfig for the target cluster (see below).
+
+Set `KUBE_CONFIG` at **repo level** or on the **dev** environment (Settings →
+Environments → dev → Environment secrets).
+
+**Option A — paste raw kubeconfig (easiest)**
+
+Copy the entire contents of `~/.kube/config` into the secret (including
+`apiVersion`, `clusters`, `contexts`, `users`).
+
+**Option B — base64-encoded**
+
+```bash
+# Linux
+base64 -w0 < ~/.kube/config
+
+# macOS
+base64 < ~/.kube/config | tr -d '\n'
+```
+
+Paste the single-line output into the `KUBE_CONFIG` secret.
+
+**Common mistakes**
+
+- Pasting only part of the file
+- Extra quotes around the value
+- Using a local-only cluster (minikube/kind) that GitHub runners cannot reach
 
 **GitHub environments:** Create `dev`, `staging`, and `prod` environments in
 repo Settings → Environments. Add environment-specific secrets and optional
@@ -98,7 +124,7 @@ approval gates for prod.
 4. Add repository secrets:
    - `NPM_TOKEN` — for npm publish
    - `GH_PAT` — (optional) classic PAT with `repo` scope if Release cannot open PRs
-   - `KUBE_CONFIG` — base64 kubeconfig: `cat ~/.kube/config | base64 -w0`
+   - `KUBE_CONFIG` — full `~/.kube/config` YAML **or** base64-encoded (see Deploy section)
 5. **Settings → Actions → General → Workflow permissions:**
    - Read and write permissions
    - ✅ Allow GitHub Actions to create and approve pull requests
