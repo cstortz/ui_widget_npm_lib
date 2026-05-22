@@ -220,4 +220,41 @@ Future additions (when the widget state API backend is built):
 | Image pull errors | Ensure GHCR package visibility or use local images with `kubectl` mode |
 | Ingress 404 | Check `/etc/hosts`, ingress controller installed, and host in values |
 | Helm `--wait` timeout | `kubectl describe pod -n widget-system` for events |
-| NPM publish fails | Verify `NPM_TOKEN` and package scope `@cstortz` ownership on npmjs.com |
+| NPM publish E404 on `@cstortz/*` | Your npm account must **own the `@cstortz` scope** — see below |
+
+### npm publish E404 — scope ownership
+
+npm returns **404 Not Found** (not 403) when you try to publish to a scope you
+don't own. Fix one of these:
+
+**Option A — your npm username is `cstortz`**
+
+1. Confirm at [npmjs.com/settings/profile](https://www.npmjs.com/settings/profile)
+2. Create a new **Automation** token (not Read-only):
+   - Access token → Generate New Token → **Classic** → **Automation**
+3. Replace the `NPM_TOKEN` secret in GitHub with the new token
+4. Re-run Release or **Publish to npm (manual)**
+
+**Option B — your npm username is different (e.g. `myuser`)**
+
+Either create an npm **organization** named `cstortz`:
+
+1. [npmjs.com/org/create](https://www.npmjs.com/org/create) → name it `cstortz`
+2. Regenerate `NPM_TOKEN` from the org owner account
+
+Or rename packages to your username scope (`@myuser/widget-system`) — ask to
+update the repo if you want this.
+
+**Option C — Granular Access Token**
+
+If using a fine-grained token, it must include:
+
+- **Packages and scopes:** Read and write
+- **Organizations:** access to `@cstortz` (or select the org)
+
+**Verify locally before CI:**
+
+```bash
+npm whoami                    # must show the account that owns @cstortz
+npm publish --dry-run --workspace=@cstortz/widget-system
+```
