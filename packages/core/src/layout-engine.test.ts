@@ -5,6 +5,7 @@ import {
   findNextGridSlot,
   moveItemOnGrid,
   placementFromTopLeft,
+  placementFromDragDelta,
   restoreFromTab,
   snapResize,
   toCssGridTemplate,
@@ -132,15 +133,6 @@ describe('LayoutEngine', () => {
     assert.ok(issues.some(i => i.message.includes('Overlaps')));
   });
 
-  it('snaps widget top-left to grid placement', () => {
-    const current = { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 };
-    const container = { left: 0, top: 0, width: 1200, height: 600 };
-    const placement = placementFromTopLeft(900, 120, container, current);
-    assert.equal(placement.colEnd - placement.colStart, 4);
-    assert.ok(placement.colStart >= 8);
-    assert.equal(placement.rowStart, 2);
-  });
-
   it('does not move other widgets when one item is repositioned', () => {
     const a = createLayoutItem('a', null, { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 });
     const b = createLayoutItem('b', null, { colStart: 5, colEnd: 9, rowStart: 1, rowEnd: 2 });
@@ -156,5 +148,13 @@ describe('LayoutEngine', () => {
     assert.equal(movedA.grid.rowStart, 2);
     assert.equal(movedB.grid.colStart, 5);
     assert.equal(movedB.grid.rowStart, 1);
+  });
+
+  it('applies drag delta in column/row steps from original placement', () => {
+    const original = { colStart: 8, colEnd: 11, rowStart: 2, rowEnd: 3 };
+    const placement = placementFromDragDelta(original, 200, 0, 1200);
+    assert.ok(placement.colStart > original.colStart);
+    assert.equal(placement.colEnd - placement.colStart, 3);
+    assert.equal(placement.rowStart, original.rowStart);
   });
 });

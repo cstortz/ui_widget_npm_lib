@@ -10,7 +10,7 @@ import {
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
-  placementFromTopLeft,
+  placementFromDragDelta,
   toCssGridTemplate,
 } from '@ncs_software/widget-system';
 import {
@@ -104,18 +104,17 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
 
     const { active } = event;
     const item = gridItems.find(i => i.instanceId === active.id);
-    const translated = active.rect.current.translated;
-    if (!item || !translated) {
+    if (!item) {
       return;
     }
 
     const container = gridRef.current.getBoundingClientRect();
     const rowMetrics = measureGridRowMetrics(gridRef.current, String(active.id));
-    const placement = placementFromTopLeft(
-      translated.left,
-      translated.top,
-      container,
+    const placement = placementFromDragDelta(
       item.grid,
+      event.delta.x,
+      event.delta.y,
+      container.width,
       { ...workspace.layout, ...layout },
       rowMetrics
     );
@@ -131,6 +130,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
       <div
         ref={gridRef}
+        data-testid="grid-workspace"
         className={`wdg-grid-workspace-layout${editMode ? ' wdg-grid-workspace-layout--edit' : ''}`}
         style={{
           display: 'grid',

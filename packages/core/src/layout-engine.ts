@@ -246,6 +246,46 @@ function rowStartFromRelativeY(
   return 1;
 }
 
+/** Snap placement by applying pixel drag delta to the widget's original grid position */
+export function placementFromDragDelta(
+  original: GridPlacement,
+  deltaX: number,
+  deltaY: number,
+  containerWidth: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>,
+  rowMetrics?: GridRowMetrics
+): GridPlacement {
+  const layout = resolveLayoutConfig(layoutConfig);
+  const columns = layout.columns;
+  const gap = layout.gapPx;
+  const rowHeight = layout.rowHeightPx;
+  const colSpan = original.colEnd - original.colStart;
+  const rowSpan = original.rowEnd - original.rowStart;
+
+  const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
+  const colStride = trackWidth + gap;
+  const colDelta = Math.round(deltaX / colStride);
+
+  let rowStride = rowHeight + gap;
+  if (rowMetrics && rowMetrics.rowTops.size >= 2) {
+    const rowIndices = [...rowMetrics.rowTops.keys()].sort((a, b) => a - b);
+    const firstTop = rowMetrics.rowTops.get(rowIndices[0]) ?? 0;
+    const lastTop = rowMetrics.rowTops.get(rowIndices[rowIndices.length - 1]) ?? firstTop;
+    rowStride = Math.max(rowStride, (lastTop - firstTop) / (rowIndices.length - 1));
+  }
+  const rowDelta = Math.round(deltaY / rowStride);
+
+  return clampPlacement(
+    {
+      colStart: original.colStart + colDelta,
+      colEnd: original.colStart + colDelta + colSpan,
+      rowStart: original.rowStart + rowDelta,
+      rowEnd: original.rowStart + rowDelta + rowSpan,
+    },
+    columns
+  );
+}
+
 /** Snap a widget's top-left corner to the nearest grid placement (preserves span) */
 export function placementFromTopLeft(
   topLeftX: number,

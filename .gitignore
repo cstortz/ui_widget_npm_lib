@@ -14,6 +14,10 @@ coverage/
 .vscode/
 *.local
 
+# Playwright
+test-results/
+playwright-report/
+
 # Demo app build output
 apps/*/dist/
 apps/*/.angular/

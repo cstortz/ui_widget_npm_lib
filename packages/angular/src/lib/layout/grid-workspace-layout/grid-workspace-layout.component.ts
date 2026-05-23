@@ -15,7 +15,7 @@ import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
-  placementFromTopLeft,
+  placementFromDragDelta,
   toCssGridTemplate,
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
@@ -170,19 +170,17 @@ export class GridWorkspaceLayoutComponent {
       return;
     }
 
-    const root = event.source.getRootElement() as HTMLElement;
-    const elRect = root.getBoundingClientRect();
     const containerEl = this.gridContainer.nativeElement;
     const containerRect = containerEl.getBoundingClientRect();
     const ws = this.workspace();
     const layout = { ...ws?.layout, ...this.layoutDefaults };
     const rowMetrics = measureGridRowMetrics(containerEl, item.instanceId);
 
-    const placement = placementFromTopLeft(
-      elRect.left,
-      elRect.top,
-      containerRect,
+    const placement = placementFromDragDelta(
       item.grid,
+      event.distance.x,
+      event.distance.y,
+      containerRect.width,
       layout,
       rowMetrics
     );

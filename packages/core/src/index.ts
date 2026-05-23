@@ -29,6 +29,7 @@ export {
   findNextGridSlot,
   createLayoutItem,
   placementFromTopLeft,
+  placementFromDragDelta,
   placementFromPointer,
   moveItemOnGrid,
   type GridContainerMetrics,

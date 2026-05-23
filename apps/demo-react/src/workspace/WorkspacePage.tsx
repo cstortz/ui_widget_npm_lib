@@ -2,12 +2,14 @@ import { useParams } from 'react-router-dom';
 import { WorkspaceShell } from '@ncs_software/widget-system-react';
 import { createDemoLayoutItems } from '../demo-widget-registry';
 import { DemoWidgetHost } from '../widgets/DemoWidgetHost';
+import { TestDebugBridge } from './TestDebugBridge';
 
 export function WorkspacePage() {
   const { workspaceId = 'demo' } = useParams<{ workspaceId: string }>();
 
   return (
-    <div className="workspace-page">
+    <div className="workspace-page" data-testid="workspace-page">
+      <TestDebugBridge />
       <WorkspaceShell
         workspaceId={workspaceId}
         defaultWorkspace={{
