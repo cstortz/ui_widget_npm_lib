@@ -14,9 +14,9 @@
   ],
   "scripts": {
     "build": "ng-packagr -p ng-package.json",
-    "test": "echo 'Angular tests — add ng test'",
+    "test": "npm run build -w @ncs_software/widget-system && npm run build -w @ncs_software/widget-system-angular && vitest run",
     "lint": "ng-packagr -p ng-package.json --help > /dev/null",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist out-tsc"
   },
   "peerDependencies": {
     "@angular/cdk": ">=17",
@@ -31,9 +31,20 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
+    "@angular/animations": "^19.2.0",
+    "@angular/cdk": "^19.2.0",
+    "@angular/common": "^19.2.0",
     "@angular/compiler": "^19.2.0",
     "@angular/compiler-cli": "^19.2.0",
-    "ng-packagr": "^19.2.0"
+    "@angular/core": "^19.2.0",
+    "@angular/material": "^19.2.0",
+    "@angular/platform-browser": "^19.2.0",
+    "@angular/platform-browser-dynamic": "^19.2.0",
+    "jsdom": "^25.0.1",
+    "ng-packagr": "^19.2.0",
+    "rxjs": "^7.8.1",
+    "vitest": "^3.0.5",
+    "zone.js": "^0.15.0"
   },
   "keywords": [
     "angular",
