@@ -20,6 +20,7 @@ import { WorkspaceLayoutService } from '../services/workspace-layout.service';
 import { GridWorkspaceLayoutComponent } from '../layout/grid-workspace-layout/grid-workspace-layout.component';
 import { WidgetTabBarComponent } from '../layout/widget-tab-bar/widget-tab-bar.component';
 import { LayoutEditToolbarComponent } from '../layout/layout-edit-toolbar/layout-edit-toolbar.component';
+import { TestDebugBridgeComponent } from './test-debug-bridge.component';
 import {
   WidgetBodyDirective,
   type WidgetBodyContext,
@@ -33,12 +34,16 @@ import {
     GridWorkspaceLayoutComponent,
     WidgetTabBarComponent,
     LayoutEditToolbarComponent,
+    TestDebugBridgeComponent,
   ],
   providers: [WorkspaceLayoutService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (layoutService.workspace$ | async; as ws) {
       <div class="wdg-workspace-shell">
+        @if (enableTestBridge) {
+          <wdg-test-debug-bridge />
+        }
         <wdg-layout-edit-toolbar
           [workspaceId]="ws.id"
           (editModeChange)="editMode.set($event)"
@@ -82,6 +87,7 @@ import {
 export class WorkspaceShellComponent implements OnInit, AfterContentInit {
   @Input({ required: true }) workspaceId!: string;
   @Input() defaultWorkspace?: Omit<WorkspaceConfig, 'id' | 'createdAt' | 'updatedAt'>;
+  @Input() enableTestBridge = false;
   @ContentChild(WidgetBodyDirective) widgetBody?: WidgetBodyDirective;
 
   protected readonly layoutService = inject(WorkspaceLayoutService);

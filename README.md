@@ -41,8 +41,8 @@ npx playwright install chromium --with-deps
 npm run test:e2e
 ```
 
-Tests live in `e2e/` and run in CI after unit tests. In the React demo console,
-`window.__WDG_TEST__?.getItems()` exposes the current workspace items for debugging.
+Tests live in `e2e/` and run in CI after unit tests. In the demo console,
+`window.__WDG_TEST__?.getItems()` exposes the current workspace items (React and Angular demos).
 
 ---
 

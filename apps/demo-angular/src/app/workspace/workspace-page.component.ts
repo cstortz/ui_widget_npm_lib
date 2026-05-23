@@ -16,18 +16,26 @@ import { createDemoLayoutItems } from '../demo-widget-registry';
   imports: [WorkspaceShellComponent, WidgetBodyDirective, DemoWidgetHostComponent],
   template: `
     @if (workspaceId(); as id) {
-      <wdg-workspace-shell
-        [workspaceId]="id"
-        [defaultWorkspace]="defaultWorkspace(id)"
-      >
-        <ng-template wdgWidgetBody let-item="item">
-          <demo-widget-host [item]="item" />
-        </ng-template>
-      </wdg-workspace-shell>
+      <div class="demo-workspace-page" data-testid="workspace-page">
+        <wdg-workspace-shell
+          [workspaceId]="id"
+          [defaultWorkspace]="defaultWorkspace(id)"
+          [enableTestBridge]="true"
+        >
+          <ng-template wdgWidgetBody let-item="item">
+            <demo-widget-host [item]="item" />
+          </ng-template>
+        </wdg-workspace-shell>
+      </div>
     }
   `,
   styles: [
     `
+      .demo-workspace-page {
+        display: block;
+        height: 100%;
+      }
+
       :host {
         display: block;
         height: 100%;

@@ -39,6 +39,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
     <div
       #gridContainer
       class="wdg-grid-workspace-layout"
+      data-testid="grid-workspace"
       [class.wdg-grid-workspace-layout--edit]="editMode"
       [style.display]="'grid'"
       [style.gridTemplateColumns]="gridTemplate()?.gridTemplateColumns"
