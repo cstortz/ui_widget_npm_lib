@@ -77,7 +77,7 @@ export interface CssGridItemStyle {
   instanceId: WidgetInstanceId;
   gridColumn: string;
   gridRow: string;
-  /** Placement used for CSS (may clamp columns when viewport narrows) */
+  /** Placement used for CSS (grid expands to fit saved columns/rows; may scroll) */
   displayGrid: GridPlacement;
 }
 

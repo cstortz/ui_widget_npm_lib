@@ -1,5 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { cellForWidget, dragCellBy, enterEditMode, readGridPlacement, waitForWorkspaceReady } from './grid';
+import {
+  cellForWidget,
+  dragCellBy,
+  enterEditMode,
+  readGridDragStrides,
+  readGridPlacement,
+  readWidgetGridFromState,
+  resizeCellBy,
+  waitForWorkspaceReady,
+} from './grid';
 
 export function registerGridLayoutTests(demoPath: string): void {
   test.describe('Grid workspace layout', () => {
@@ -78,6 +87,25 @@ export function registerGridLayoutTests(demoPath: string): void {
       expect(notesAfter).toEqual(notesBefore);
       expect(checklistAfter).toEqual(checklistBefore);
       await page.getByRole('status').filter({ hasText: 'Overlap' }).waitFor();
+    });
+
+    test('east resize shrinks widget width without moving colStart', async ({ page }) => {
+      await enterEditMode(page);
+
+      const notesCell = await cellForWidget(page, 'Notes');
+      const before = await readGridPlacement(notesCell);
+      const { colStride } = await readGridDragStrides(page);
+
+      await resizeCellBy(page, notesCell, 'east', -colStride, 0);
+
+      const after = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      const state = await readWidgetGridFromState(page, 'demo-notes');
+
+      expect(Number(before.colStart)).toBe(1);
+      expect(Number(after.colStart)).toBe(1);
+      expect(Number(after.colEnd)).toBe(Number(before.colEnd) - 1);
+      expect(state?.colStart).toBe(1);
+      expect(state?.colEnd).toBe(Number(before.colEnd) - 1);
     });
   });
 }

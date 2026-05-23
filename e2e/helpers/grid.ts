@@ -84,6 +84,26 @@ export async function dragCellBy(
   await page.mouse.up();
 }
 
+export async function resizeCellBy(
+  page: Page,
+  cell: Locator,
+  edge: 'east' | 'south',
+  deltaX: number,
+  deltaY: number
+): Promise<void> {
+  const handle = cell.locator(`.wdg-grid-resize-handle[data-edge="${edge}"]`);
+  const box = await handle.boundingBox();
+  if (!box) {
+    throw new Error(`Resize handle "${edge}" has no bounding box`);
+  }
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 12 });
+  await page.mouse.up();
+}
+
 /** Drag a widget down by a couple of row strides */
 export async function dragCellToGridBottom(page: Page, title: string): Promise<void> {
   const { rowStride } = await readGridDragStrides(page);

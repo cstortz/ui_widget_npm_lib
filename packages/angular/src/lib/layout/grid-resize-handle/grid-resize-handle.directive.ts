@@ -38,7 +38,7 @@ export class GridResizeHandleDirective {
   @HostBinding('style.top')
   get styleTop(): string | null {
     if (this.edge === 'north') {
-      return '-4px';
+      return '0';
     }
     return this.isHorizontal ? '0' : null;
   }
@@ -46,7 +46,7 @@ export class GridResizeHandleDirective {
   @HostBinding('style.bottom')
   get styleBottom(): string | null {
     if (this.edge === 'south') {
-      return '-4px';
+      return '0';
     }
     return this.isHorizontal ? '0' : null;
   }
@@ -54,7 +54,7 @@ export class GridResizeHandleDirective {
   @HostBinding('style.left')
   get styleLeft(): string | null {
     if (this.edge === 'west') {
-      return '-4px';
+      return '0';
     }
     return this.isVertical ? '0' : null;
   }
@@ -62,19 +62,19 @@ export class GridResizeHandleDirective {
   @HostBinding('style.right')
   get styleRight(): string | null {
     if (this.edge === 'east') {
-      return '-4px';
+      return '0';
     }
     return this.isVertical ? '0' : null;
   }
 
   @HostBinding('style.width')
   get styleWidth(): string | null {
-    return this.isHorizontal ? '8px' : null;
+    return this.isHorizontal ? '12px' : null;
   }
 
   @HostBinding('style.height')
   get styleHeight(): string | null {
-    return this.isVertical ? '8px' : null;
+    return this.isVertical ? '12px' : null;
   }
 
   @HostBinding('style.cursor')

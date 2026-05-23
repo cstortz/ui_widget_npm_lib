@@ -94,15 +94,3 @@
   pointer-events: none;
   z-index: 4;
 }
-
-.wdg-grid-workspace-layout__debug-bar {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  padding: 0.35rem 0.65rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.7rem;
-  color: #fff;
-  background: rgba(25, 118, 210, 0.92);
-  pointer-events: none;
-}

@@ -12,7 +12,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 import type {
@@ -24,11 +24,9 @@ import {
   gridItems as filterGridItems,
   evaluateGridMove,
   columnWidthPx,
-  columnStridePx,
   findOverlappingInstanceIds,
   formatGridMoveRejection,
   layoutConfigForContainer,
-  gridRowStride,
   placementFromDragDelta,
   proposedFootprintRect,
   resolveLayoutConfig,
@@ -37,7 +35,6 @@ import {
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
 import { GridCellComponent } from './grid-cell.component';
-import { GridCellDebugOverlayComponent } from './grid-cell-debug-overlay.component';
 import { measureGridCellRects } from './grid-measure';
 import { WidgetBodyDirective, type WidgetBodyContext } from '../widget-body.directive';
 import { GridResizeHandleDirective } from '../grid-resize-handle/grid-resize-handle.directive';
@@ -47,27 +44,14 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
   selector: 'wdg-grid-workspace-layout',
   standalone: true,
   imports: [
-    DecimalPipe,
     NgTemplateOutlet,
     DragDropModule,
     GridCellComponent,
-    GridCellDebugOverlayComponent,
     GridResizeHandleDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="wdg-grid-workspace-layout-wrapper" #gridWrapper>
-      @if (editMode) {
-        <div class="wdg-grid-workspace-layout__debug-bar" aria-hidden="true">
-          Viewport {{ containerSize().width | number: '1.0-0' }}×{{
-            containerSize().height | number: '1.0-0'
-          }}px · {{ gridTemplate()?.columnCount ?? 0 }} cols ×
-          {{ gridTemplate()?.rowCount ?? 0 }} rows · track
-          {{ columnWidthPx() | number: '1.2-2' }}×{{ rowHeightPx() }}px · stride
-          {{ columnStridePx() | number: '1.2-2' }}×{{ rowStridePx() | number: '1.2-2' }}px · gap
-          {{ layoutGapPx() }}px
-        </div>
-      }
       <div
         #gridRoot
         class="wdg-grid-workspace-layout"
@@ -98,13 +82,6 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
             <div *cdkDragPlaceholder class="wdg-grid-workspace-layout__drag-placeholder"></div>
             @if (editMode) {
               <div class="wdg-grid-workspace-layout__drag-handle" cdkDragHandle aria-label="Drag widget"></div>
-              <wdg-grid-cell-debug
-                [instanceId]="item.instanceId"
-                [widgetId]="item.widgetId"
-                [savedGrid]="item.grid"
-                [displayGrid]="displayGrid(item.instanceId)"
-                [gridContainer]="gridRoot"
-              />
             }
             @if (bodyTemplate) {
               <ng-container
@@ -249,18 +226,6 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         pointer-events: none;
         z-index: 4;
       }
-
-      .wdg-grid-workspace-layout__debug-bar {
-        position: sticky;
-        top: 0;
-        z-index: 6;
-        padding: 0.35rem 0.65rem;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 0.7rem;
-        color: #fff;
-        background: rgba(25, 118, 210, 0.92);
-        pointer-events: none;
-      }
     `,
   ],
 })
@@ -326,26 +291,17 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
     return this.activeLayoutConfig().gapPx;
   }
 
-  protected columnStridePx(): number {
-    return columnStridePx(this.activeLayoutConfig());
-  }
-
   protected rowHeightPx(): number {
     return this.activeLayoutConfig().rowHeightPx;
   }
 
-  protected rowStridePx(): number {
-    return gridRowStride(this.activeLayoutConfig());
-  }
-
-  protected displayGrid(instanceId: string): GridPlacement {
-    const cell = this.gridTemplate()?.items.find(i => i.instanceId === instanceId);
-    return cell?.displayGrid ?? { colStart: 1, colEnd: 2, rowStart: 1, rowEnd: 2 };
-  }
-
   protected layoutBounds(): GridLayoutBounds {
+    const template = this.gridTemplate();
     const config = this.activeLayoutConfig();
-    return { columns: config.columns, rows: config.rows };
+    return {
+      columns: template?.columnCount ?? config.columns,
+      rows: template?.rowCount ?? config.rows,
+    };
   }
 
   ngAfterViewInit(): void {

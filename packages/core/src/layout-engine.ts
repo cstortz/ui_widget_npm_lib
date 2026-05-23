@@ -41,6 +41,10 @@ export function maxGridRow(items: readonly WidgetLayoutItem[]): number {
   return gridItems(items).reduce((max, item) => Math.max(max, item.grid.rowEnd - 1), 1);
 }
 
+export function maxGridColumn(items: readonly WidgetLayoutItem[]): number {
+  return gridItems(items).reduce((max, item) => Math.max(max, item.grid.colEnd - 1), 1);
+}
+
 export function gridRowStride(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
   const layout = resolveLayoutConfig(layoutConfig);
   return layout.rowHeightPx + layout.gapPx;
@@ -142,7 +146,11 @@ export function toCssGridTemplate(
 ): CssGridTemplate {
   const layout = resolveLayoutConfig(layoutConfig);
   const visible = gridItems(items);
-  const columns = Math.max(1, options?.columnCount ?? layout.columns);
+  const columns = Math.max(
+    1,
+    options?.columnCount ?? layout.columns,
+    maxGridColumn(visible)
+  );
   const rowCount = Math.max(
     1,
     maxGridRow(visible),

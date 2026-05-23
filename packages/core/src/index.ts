@@ -21,6 +21,7 @@ export {
   gridItems,
   tabbedItems,
   maxGridRow,
+  maxGridColumn,
   toCssGridTemplate,
   gridRowStride,
   rowsForContainerHeight,

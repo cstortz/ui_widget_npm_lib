@@ -8,30 +8,30 @@
 .wdg-grid-resize-handle[data-edge='west'] {
   top: 0;
   bottom: 0;
-  width: 8px;
+  width: 12px;
   cursor: ew-resize;
 }
 
 .wdg-grid-resize-handle[data-edge='east'] {
-  right: -4px;
+  right: 0;
 }
 
 .wdg-grid-resize-handle[data-edge='west'] {
-  left: -4px;
+  left: 0;
 }
 
 .wdg-grid-resize-handle[data-edge='south'],
 .wdg-grid-resize-handle[data-edge='north'] {
   left: 0;
   right: 0;
-  height: 8px;
+  height: 12px;
   cursor: ns-resize;
 }
 
 .wdg-grid-resize-handle[data-edge='south'] {
-  bottom: -4px;
+  bottom: 0;
 }
 
 .wdg-grid-resize-handle[data-edge='north'] {
-  top: -4px;
+  top: 0;
 }

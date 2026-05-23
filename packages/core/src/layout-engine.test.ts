@@ -226,6 +226,38 @@ describe('LayoutEngine', () => {
     assert.equal(clamped.rowEnd, 7);
   });
 
+  it('expands column tracks to fit saved mosaic layout on narrow viewports', () => {
+    const items: WidgetLayoutItem[] = [
+      createLayoutItem('demo-notes', 'ctx', { colStart: 1, colEnd: 8, rowStart: 1, rowEnd: 2 }),
+      createLayoutItem('demo-checklist', 'ctx', { colStart: 8, colEnd: 13, rowStart: 1, rowEnd: 2 }),
+      createLayoutItem('demo-timer', 'ctx', { colStart: 8, colEnd: 11, rowStart: 2, rowEnd: 3 }),
+      createLayoutItem('demo-links', 'ctx', { colStart: 11, colEnd: 13, rowStart: 2, rowEnd: 3 }),
+    ];
+    const layout = layoutConfigForContainer(800, 600);
+    assert.equal(layout.columns, 8);
+    const css = toCssGridTemplate(items, layout, {
+      columnCount: layout.columns,
+      rowCount: layout.rows,
+    });
+    assert.equal(css.columnCount, 12);
+    const display = new Map(css.items.map(i => [i.instanceId, i.displayGrid]));
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = display.get(items[i].instanceId)!;
+        const b = display.get(items[j].instanceId)!;
+        const overlaps =
+          a.colStart < b.colEnd &&
+          b.colStart < a.colEnd &&
+          a.rowStart < b.rowEnd &&
+          b.rowStart < a.rowEnd;
+        assert.equal(overlaps, false, `${items[i].widgetId} vs ${items[j].widgetId}`);
+      }
+    }
+    assert.deepEqual(display.get(items[1].instanceId), items[1].grid);
+    assert.deepEqual(display.get(items[2].instanceId), items[2].grid);
+    assert.deepEqual(display.get(items[3].instanceId), items[3].grid);
+  });
+
   it('rejects moves that extend past the workspace container', () => {
     const a = createLayoutItem('a', null, { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 });
     const b = createLayoutItem('b', null, { colStart: 5, colEnd: 9, rowStart: 1, rowEnd: 2 });
