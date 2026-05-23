@@ -40,7 +40,7 @@ export interface WorkspaceLayoutConfig {
 
 export const DEFAULT_WORKSPACE_LAYOUT: WorkspaceLayoutConfig = {
   columns: 12,
-  rowHeightPx: 48,
+  rowHeightPx: 80,
   gapPx: 8,
   tabBar: { enabled: true, maxVisible: 10 },
 };

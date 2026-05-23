@@ -184,10 +184,96 @@ export function nextTabOrder(items: readonly WidgetLayoutItem[]): number {
   return Math.max(...tabbed.map(i => i.tabOrder ?? 0)) + 1;
 }
 
+export interface GridContainerMetrics {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** Map a pointer position within the grid container to a snapped placement (preserves span) */
+export function placementFromPointer(
+  clientX: number,
+  clientY: number,
+  container: GridContainerMetrics,
+  current: GridPlacement,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): GridPlacement {
+  const layout = resolveLayoutConfig(layoutConfig);
+  const columns = layout.columns;
+  const gap = layout.gapPx;
+  const rowHeight = layout.rowHeightPx;
+  const colSpan = current.colEnd - current.colStart;
+  const rowSpan = current.rowEnd - current.rowStart;
+
+  const relX = Math.max(0, Math.min(clientX - container.left, container.width));
+  const relY = Math.max(0, clientY - container.top);
+
+  const trackWidth = (container.width - gap * (columns - 1)) / columns;
+
+  let colIndex = 1;
+  let x = 0;
+  for (let c = 1; c <= columns; c++) {
+    const trackEnd = x + trackWidth;
+    if (relX <= trackEnd || c === columns) {
+      colIndex = c;
+      break;
+    }
+    x = trackEnd + gap;
+  }
+
+  const colStart = Math.max(1, Math.min(colIndex, columns - colSpan + 1));
+  const rowStride = rowHeight + gap;
+  const rowStart = Math.max(1, Math.floor(relY / rowStride) + 1);
+
+  return clampPlacement(
+    {
+      colStart,
+      colEnd: colStart + colSpan,
+      rowStart,
+      rowEnd: rowStart + rowSpan,
+    },
+    columns
+  );
+}
+
+/** Move a grid item; swaps placement with any overlapping widget */
+export function moveItemOnGrid(
+  items: readonly WidgetLayoutItem[],
+  instanceId: string,
+  target: GridPlacement,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): WidgetLayoutItem[] {
+  const layout = resolveLayoutConfig(layoutConfig);
+  const source = items.find(i => i.instanceId === instanceId);
+  if (!source || source.mode !== 'grid') {
+    return [...items];
+  }
+
+  const clamped = clampPlacement(target, layout.columns);
+  const others = gridItems(items).filter(i => i.instanceId !== instanceId);
+  const overlapping = others.find(o => placementsOverlap(o.grid, clamped));
+
+  if (overlapping) {
+    const sourceGrid = { ...source.grid };
+    return items.map(i => {
+      if (i.instanceId === instanceId) {
+        return { ...i, grid: clamped };
+      }
+      if (i.instanceId === overlapping.instanceId) {
+        return { ...i, grid: sourceGrid };
+      }
+      return i;
+    });
+  }
+
+  return items.map(i => (i.instanceId === instanceId ? { ...i, grid: clamped } : i));
+}
+
 export function findNextGridSlot(
   items: readonly WidgetLayoutItem[],
   columns: number,
-  span = 6
+  span = 4
 ): GridPlacement {
   const grid = gridItems(items);
   let row = 1;

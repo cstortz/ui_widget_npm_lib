@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   collapseToTab,
   findNextGridSlot,
+  moveItemOnGrid,
+  placementFromPointer,
   restoreFromTab,
   snapResize,
   toCssGridTemplate,
@@ -128,5 +130,29 @@ describe('LayoutEngine', () => {
 
     const issues = validateLayout(items, registry);
     assert.ok(issues.some(i => i.message.includes('Overlaps')));
+  });
+
+  it('snaps pointer position to grid placement', () => {
+    const current = { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 };
+    const container = { left: 0, top: 0, width: 1200, height: 600 };
+    const placement = placementFromPointer(900, 120, container, current);
+    assert.equal(placement.colEnd - placement.colStart, 4);
+    assert.ok(placement.colStart >= 8);
+    assert.equal(placement.rowStart, 2);
+  });
+
+  it('swaps placements when move overlaps another widget', () => {
+    const a = createLayoutItem('a', null, { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 });
+    const b = createLayoutItem('b', null, { colStart: 5, colEnd: 9, rowStart: 1, rowEnd: 2 });
+    const moved = moveItemOnGrid([a, b], a.instanceId, {
+      colStart: 5,
+      colEnd: 9,
+      rowStart: 1,
+      rowEnd: 2,
+    });
+    const movedA = moved.find(i => i.instanceId === a.instanceId)!;
+    const movedB = moved.find(i => i.instanceId === b.instanceId)!;
+    assert.equal(movedA.grid.colStart, 5);
+    assert.equal(movedB.grid.colStart, 1);
   });
 });

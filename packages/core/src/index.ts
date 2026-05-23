@@ -28,6 +28,9 @@ export {
   nextTabOrder,
   findNextGridSlot,
   createLayoutItem,
+  placementFromPointer,
+  moveItemOnGrid,
+  type GridContainerMetrics,
   type LayoutValidationIssue,
 } from './layout-engine.js';
 

@@ -8,7 +8,7 @@ import { RouterOutlet } from '@angular/router';
   template: `
     <header class="demo-header">
       <h1>{{ title }}</h1>
-      <p>Angular demo — two-panel workspace with swap and persisted state</p>
+      <p>Angular demo — 12-column grid workspace with runtime layout editing</p>
     </header>
     <main class="demo-main">
       <router-outlet />

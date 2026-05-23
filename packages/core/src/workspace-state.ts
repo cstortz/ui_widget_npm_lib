@@ -21,6 +21,7 @@ import {
   restoreFromTab,
   snapResize,
   clampPlacement,
+  moveItemOnGrid,
 } from './layout-engine.js';
 
 export interface WorkspaceStateOptions {
@@ -277,12 +278,8 @@ export class WorkspaceState {
     if (!item) {
       return this.workspace;
     }
-    const updated = {
-      ...item,
-      mode: 'grid' as const,
-      grid: clampPlacement(grid, this.layoutConfig.columns),
-    };
-    this.workspace = this.touch(this.replaceItem(updated));
+    const moved = moveItemOnGrid(this.items, instanceId, grid, this.layoutConfig);
+    this.workspace = this.touch(moved);
     return this.persist();
   }
 

@@ -1,20 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   DndContext,
   PointerSensor,
-  closestCenter,
+  useDraggable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  rectSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
-import { gridItems as filterGridItems, toCssGridTemplate } from '@ncs_software/widget-system';
+import {
+  gridItems as filterGridItems,
+  placementFromPointer,
+  toCssGridTemplate,
+} from '@ncs_software/widget-system';
 import {
   useLayoutConfig,
   useWorkspace,
@@ -28,7 +26,7 @@ export interface GridWorkspaceLayoutProps {
   renderWidget: (item: WidgetLayoutItem) => React.ReactNode;
 }
 
-function SortableGridCell({
+function DraggableGridCell({
   item,
   editMode,
   canResize,
@@ -43,14 +41,17 @@ function SortableGridCell({
   gridRow: string;
   renderWidget: (item: WidgetLayoutItem) => React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: item.instanceId, disabled: !editMode });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: item.instanceId,
+    disabled: !editMode,
+  });
 
-  const style = {
+  const style: React.CSSProperties = {
     gridColumn,
     gridRow,
-    transform: CSS.Transform.toString(transform),
-    transition,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    zIndex: isDragging ? 3 : undefined,
+    cursor: editMode ? (isDragging ? 'grabbing' : 'grab') : undefined,
     opacity: isDragging ? 0.85 : 1,
   };
 
@@ -71,6 +72,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const workspace = useWorkspace();
   const layoutService = useWorkspaceLayoutService();
   const { layout, permissions } = useLayoutConfig();
+  const gridRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const gridItems = useMemo(
@@ -79,7 +81,10 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   );
 
   const gridTemplate = useMemo(
-    () => (workspace?.items ? toCssGridTemplate(workspace.items, { ...workspace.layout, ...layout }) : null),
+    () =>
+      workspace?.items
+        ? toCssGridTemplate(workspace.items, { ...workspace.layout, ...layout })
+        : null,
     [workspace, layout]
   );
 
@@ -91,24 +96,29 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id || !workspace?.items) {
+    if (!editMode || !permissions.reorder || !gridRef.current || !workspace?.items) {
       return;
     }
-    const items = [...gridItems];
-    const oldIndex = items.findIndex(i => i.instanceId === active.id);
-    const newIndex = items.findIndex(i => i.instanceId === over.id);
-    if (oldIndex < 0 || newIndex < 0) {
+
+    const { active } = event;
+    const item = gridItems.find(i => i.instanceId === active.id);
+    const translated = active.rect.current.translated;
+    if (!item || !translated) {
       return;
     }
-    const [moved] = items.splice(oldIndex, 1);
-    items.splice(newIndex, 0, moved);
-    const reordered = items.map((item, index) => ({
-      ...item,
-      grid: { ...item.grid, rowStart: index + 1, rowEnd: index + 2 },
-    }));
-    const tabbed = workspace.items.filter(i => i.mode === 'tabbed');
-    await layoutService.updateItems([...tabbed, ...reordered]);
+
+    const container = gridRef.current.getBoundingClientRect();
+    const centerX = translated.left + translated.width / 2;
+    const centerY = translated.top + translated.height / 2;
+    const placement = placementFromPointer(
+      centerX,
+      centerY,
+      container,
+      item.grid,
+      { ...workspace.layout, ...layout }
+    );
+
+    await layoutService.moveWidget(item.instanceId, placement);
   };
 
   if (!gridTemplate) {
@@ -116,33 +126,32 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={gridItems.map(i => i.instanceId)} strategy={rectSortingStrategy}>
-        <div
-          className="wdg-grid-workspace-layout"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: gridTemplate.gridTemplateColumns,
-            gridTemplateRows: gridTemplate.gridTemplateRows,
-            gap: gridTemplate.gap,
-          }}
-        >
-          {gridItems.map(item => {
-            const style = cellStyle(item.instanceId);
-            return (
-              <SortableGridCell
-                key={item.instanceId}
-                item={item}
-                editMode={editMode && !!permissions.reorder}
-                canResize={!!permissions.resize}
-                gridColumn={style.gridColumn}
-                gridRow={style.gridRow}
-                renderWidget={renderWidget}
-              />
-            );
-          })}
-        </div>
-      </SortableContext>
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      <div
+        ref={gridRef}
+        className={`wdg-grid-workspace-layout${editMode ? ' wdg-grid-workspace-layout--edit' : ''}`}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: gridTemplate.gridTemplateColumns,
+          gridTemplateRows: gridTemplate.gridTemplateRows,
+          gap: gridTemplate.gap,
+        }}
+      >
+        {gridItems.map(item => {
+          const style = cellStyle(item.instanceId);
+          return (
+            <DraggableGridCell
+              key={item.instanceId}
+              item={item}
+              editMode={editMode && !!permissions.reorder}
+              canResize={!!permissions.resize}
+              gridColumn={style.gridColumn}
+              gridRow={style.gridRow}
+              renderWidget={renderWidget}
+            />
+          );
+        })}
+      </div>
     </DndContext>
   );
 }

@@ -2,7 +2,6 @@ import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   WidgetRegistry,
   createLayoutItem,
-  findNextGridSlot,
 } from '@ncs_software/widget-system';
 
 export const demoWidgetRegistry = new WidgetRegistry();
@@ -38,19 +37,34 @@ demoWidgetRegistry.registerMany([
   },
 ]);
 
+export const DEMO_LAYOUT_VERSION = 2;
+
+/** Mosaic default layout — not a fixed 50/50 two-column split */
 export function createDemoLayoutItems(contextId: string): WidgetLayoutItem[] {
-  const columns = 12;
-  const items: WidgetLayoutItem[] = [];
-
-  const add = (widgetId: string) => {
-    const grid = findNextGridSlot(items, columns, 6);
-    items.push(createLayoutItem(widgetId, contextId, grid));
-  };
-
-  add('demo-notes');
-  add('demo-checklist');
-  add('demo-timer');
-  add('demo-links');
-
-  return items;
+  return [
+    createLayoutItem('demo-notes', contextId, {
+      colStart: 1,
+      colEnd: 8,
+      rowStart: 1,
+      rowEnd: 3,
+    }),
+    createLayoutItem('demo-checklist', contextId, {
+      colStart: 8,
+      colEnd: 13,
+      rowStart: 1,
+      rowEnd: 2,
+    }),
+    createLayoutItem('demo-timer', contextId, {
+      colStart: 8,
+      colEnd: 11,
+      rowStart: 2,
+      rowEnd: 3,
+    }),
+    createLayoutItem('demo-links', contextId, {
+      colStart: 11,
+      colEnd: 13,
+      rowStart: 2,
+      rowEnd: 3,
+    }),
+  ];
 }

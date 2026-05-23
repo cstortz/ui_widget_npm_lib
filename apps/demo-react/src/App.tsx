@@ -6,7 +6,7 @@ export default function App() {
     <>
       <header className="demo-header">
         <h1>@ncs_software/widget-system</h1>
-        <p>React demo — two-panel workspace with swap and persisted state</p>
+        <p>React demo — 12-column grid workspace with runtime layout editing</p>
       </header>
       <main className="demo-main">
         <Routes>
