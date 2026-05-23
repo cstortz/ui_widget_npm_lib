@@ -1,0 +1,16 @@
+.wdg-grid-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 2;
+}
+
+.wdg-grid-resize-handle[data-edge='east'] {
+  right: -4px;
+}
+
+.wdg-grid-resize-handle[data-edge='west'] {
+  left: -4px;
+}

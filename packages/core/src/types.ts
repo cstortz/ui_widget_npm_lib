@@ -1,5 +1,22 @@
 /** Shared types for @ncs_software/widget-system */
 
+import type { WidgetLayoutItem, WorkspaceLayoutConfig } from './layout-types.js';
+
+export type {
+  WidgetInstanceId,
+  WidgetPlacementMode,
+  GridPlacement,
+  WidgetLayoutItem,
+  WorkspaceTabBarConfig,
+  WorkspaceLayoutConfig,
+  LayoutPermissions,
+  WidgetSystemOptions,
+  CssGridItemStyle,
+  CssGridTemplate,
+} from './layout-types.js';
+
+export { DEFAULT_WORKSPACE_LAYOUT } from './layout-types.js';
+
 /** Known widget IDs — extend the union as new widgets are created */
 export type KnownWidgetId =
   | 'resume-panel'
@@ -43,14 +60,22 @@ export interface WidgetState<T = Record<string, unknown>> {
 
 export type WorkspaceContextType = 'job-application' | 'general';
 
+export type WorkspaceLayoutVersion = 1 | 2;
+
 export interface WorkspaceConfig {
   id: string;
   userId: string;
   name: string;
   contextType: WorkspaceContextType;
   contextId: string | null;
-  panelOrder: PanelOrder;
-  widgets: WidgetConfig[];
+  /** 2 = dynamic grid layout; undefined or 1 = legacy two-panel */
+  layoutVersion?: WorkspaceLayoutVersion;
+  layout?: WorkspaceLayoutConfig;
+  items?: WidgetLayoutItem[];
+  /** @deprecated v1 two-panel — use items + layoutVersion 2 */
+  panelOrder?: PanelOrder;
+  /** @deprecated v1 two-panel — use items + layoutVersion 2 */
+  widgets?: WidgetConfig[];
   createdAt: Date;
   updatedAt: Date;
 }

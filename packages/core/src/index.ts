@@ -1,4 +1,47 @@
 export type {
+  WidgetInstanceId,
+  WidgetPlacementMode,
+  GridPlacement,
+  WidgetLayoutItem,
+  WorkspaceTabBarConfig,
+  WorkspaceLayoutConfig,
+  LayoutPermissions,
+  WidgetSystemOptions,
+  CssGridItemStyle,
+  CssGridTemplate,
+} from './layout-types.js';
+
+export { DEFAULT_WORKSPACE_LAYOUT } from './layout-types.js';
+
+export {
+  resolveLayoutConfig,
+  gridItems,
+  tabbedItems,
+  maxGridRow,
+  toCssGridTemplate,
+  clampPlacement,
+  snapResize,
+  placementsOverlap,
+  validateLayout,
+  collapseToTab,
+  restoreFromTab,
+  nextTabOrder,
+  findNextGridSlot,
+  createLayoutItem,
+  type LayoutValidationIssue,
+} from './layout-engine.js';
+
+export {
+  migrateWorkspaceV1ToV2,
+  ensureWorkspaceV2,
+  defaultLayoutItemsFromWidgets,
+  createV2WorkspaceDefaults,
+  createDefaultLayoutItem,
+} from './migrate-workspace.js';
+
+export { createWidgetInstanceId, isWorkspaceV2 } from './layout-utils.js';
+
+export type {
   WidgetId,
   PanelPosition,
   PanelOrder,
@@ -6,6 +49,7 @@ export type {
   WidgetConfig,
   WidgetState,
   WorkspaceContextType,
+  WorkspaceLayoutVersion,
   WorkspaceConfig,
   ResumePanelState,
   ApplicationGuideState,

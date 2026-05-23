@@ -5,7 +5,7 @@ import type {
   WorkspaceConfig,
   WorkspaceContextType,
 } from '@ncs_software/widget-system';
-import { stateKey } from '@ncs_software/widget-system';
+import { ensureWorkspaceV2, stateKey } from '@ncs_software/widget-system';
 
 export class WidgetStateService {
   private readonly cache = new Map<string, WidgetState<unknown>>();
@@ -57,7 +57,8 @@ export class WidgetStateService {
 
   async loadWorkspace(workspaceId: string): Promise<WorkspaceConfig | null> {
     try {
-      return await this.adapter.loadWorkspace(workspaceId);
+      const ws = await this.adapter.loadWorkspace(workspaceId);
+      return ws ? ensureWorkspaceV2(ws) : null;
     } catch {
       return null;
     }
@@ -68,7 +69,8 @@ export class WidgetStateService {
     contextId: string
   ): Promise<WorkspaceConfig | null> {
     try {
-      return await this.adapter.loadWorkspaceByContext(contextType, contextId);
+      const ws = await this.adapter.loadWorkspaceByContext(contextType, contextId);
+      return ws ? ensureWorkspaceV2(ws) : null;
     } catch {
       return null;
     }
@@ -90,6 +92,6 @@ export class WidgetStateService {
     if (existing) {
       return existing;
     }
-    return this.saveWorkspace(factory());
+    return this.saveWorkspace(ensureWorkspaceV2(factory()));
   }
 }

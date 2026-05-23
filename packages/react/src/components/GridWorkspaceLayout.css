@@ -1,0 +1,25 @@
+.wdg-grid-workspace-layout {
+  height: 100%;
+  min-height: 320px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wdg-grid-workspace-layout__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wdg-grid-workspace-layout__cell--edit {
+  outline: 1px dashed rgba(0, 0, 0, 0.2);
+  outline-offset: -1px;
+}
+
+.wdg-grid-workspace-layout__placeholder {
+  padding: 1rem;
+  color: rgba(0, 0, 0, 0.54);
+}

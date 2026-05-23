@@ -22,7 +22,7 @@ export function WorkspaceLayout({
     let cancelled = false;
     widgetStateService.loadWorkspace(workspaceId).then(ws => {
       if (!cancelled && ws) {
-        setPanelOrder(ws.panelOrder);
+        setPanelOrder(ws.panelOrder ?? 'primary-left');
       }
     });
     return () => {

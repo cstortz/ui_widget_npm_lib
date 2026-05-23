@@ -11,6 +11,7 @@ import { EMPTY, switchMap } from 'rxjs';
 import { WidgetStateService } from '../../services/widget-state.service';
 import { SwapButtonComponent } from '../swap-button/swap-button.component';
 
+/** @deprecated Use GridWorkspaceLayoutComponent with v2 grid layout */
 @Component({
   selector: 'wdg-workspace-layout',
   standalone: true,
