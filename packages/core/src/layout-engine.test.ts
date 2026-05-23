@@ -10,6 +10,7 @@ import {
   gridPlacementOverlapsOthers,
   clampPlacement,
   snapResize,
+  snapResizeRows,
   toCssGridTemplate,
   validateLayout,
   evaluateGridMove,
@@ -94,7 +95,22 @@ describe('LayoutEngine', () => {
   it('snaps resize to column boundaries', () => {
     const placement = { colStart: 1, colEnd: 7, rowStart: 1, rowEnd: 2 };
     const resized = snapResize(placement, 2, 12, 'east');
+    assert.equal(resized.colStart, 1);
     assert.equal(resized.colEnd, 9);
+  });
+
+  it('keeps colStart fixed when resizing from the east edge', () => {
+    const placement = { colStart: 3, colEnd: 8, rowStart: 2, rowEnd: 3 };
+    const resized = snapResize(placement, 4, 38, 'east', 24);
+    assert.equal(resized.colStart, 3);
+    assert.equal(resized.colEnd, 12);
+  });
+
+  it('snaps row resize and keeps rowStart fixed from the south edge', () => {
+    const placement = { colStart: 1, colEnd: 8, rowStart: 2, rowEnd: 3 };
+    const resized = snapResizeRows(placement, 2, 12, 'south', 38);
+    assert.equal(resized.rowStart, 2);
+    assert.equal(resized.rowEnd, 5);
   });
 
   it('collapse and restore tab preserves lastGrid', () => {

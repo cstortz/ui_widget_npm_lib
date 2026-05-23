@@ -1,5 +1,6 @@
 import type {
   GridPlacement,
+  GridLayoutBounds,
   WidgetLayoutItem,
   WorkspaceLayoutConfig,
 } from './layout-types.js';
@@ -20,6 +21,7 @@ import {
   resolveLayoutConfig,
   restoreFromTab,
   snapResize,
+  snapResizeRows,
   clampPlacement,
   moveItemOnGrid,
   gridPlacementOverlapsOthers,
@@ -291,13 +293,35 @@ export class WorkspaceState {
   async resizeWidget(
     instanceId: string,
     columnDelta: number,
-    edge: 'east' | 'west' = 'east'
+    edge: 'east' | 'west' = 'east',
+    bounds?: Partial<GridLayoutBounds>
   ): Promise<WorkspaceConfig> {
     const item = this.getItem(instanceId);
     if (!item || item.mode !== 'grid') {
       return this.workspace;
     }
-    const grid = snapResize(item.grid, columnDelta, this.layoutConfig.columns, edge);
+    const columns = bounds?.columns ?? this.layoutConfig.columns;
+    const rows = bounds?.rows;
+    const grid = snapResize(item.grid, columnDelta, columns, edge, rows);
+    if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
+      return this.workspace;
+    }
+    this.workspace = this.touch(this.replaceItem({ ...item, grid }));
+    return this.persist();
+  }
+
+  async resizeWidgetRows(
+    instanceId: string,
+    rowDelta: number,
+    edge: 'south' | 'north' = 'south',
+    bounds?: Partial<GridLayoutBounds>
+  ): Promise<WorkspaceConfig> {
+    const item = this.getItem(instanceId);
+    if (!item || item.mode !== 'grid' || bounds?.rows === undefined) {
+      return this.workspace;
+    }
+    const columns = bounds.columns ?? this.layoutConfig.columns;
+    const grid = snapResizeRows(item.grid, rowDelta, bounds.rows, edge, columns);
     if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
       return this.workspace;
     }

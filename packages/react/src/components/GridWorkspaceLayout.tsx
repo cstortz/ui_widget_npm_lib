@@ -9,7 +9,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import type { GridPlacement, WidgetLayoutItem } from '@ncs_software/widget-system';
+import type { GridLayoutBounds, GridPlacement, WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
@@ -48,6 +48,7 @@ function DraggableGridCell({
   gridRow,
   displayGrid,
   containerRef,
+  layoutBounds,
   renderWidget,
   isDragOverlaySource,
 }: {
@@ -58,6 +59,7 @@ function DraggableGridCell({
   gridRow: string;
   displayGrid: GridPlacement;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  layoutBounds: GridLayoutBounds;
   renderWidget: (item: WidgetLayoutItem) => React.ReactNode;
   isDragOverlaySource?: boolean;
 }) {
@@ -87,21 +89,33 @@ function DraggableGridCell({
       style={style}
       data-wdg-instance-id={item.instanceId}
       className={`wdg-grid-workspace-layout__cell${editMode ? ' wdg-grid-workspace-layout__cell--edit' : ''}${isDragging && !isDragOverlaySource ? ' wdg-grid-workspace-layout__cell--dragging' : ''}`}
-      {...(editMode && !isDragOverlaySource ? { ...attributes, ...listeners } : {})}
     >
       {editMode && !isDragOverlaySource && (
-        <GridCellDebugOverlay
-          instanceId={item.instanceId}
-          widgetId={item.widgetId}
-          savedGrid={item.grid}
-          displayGrid={displayGrid}
-          elementRef={cellRef}
-          containerRef={containerRef}
-        />
+        <>
+          <div
+            className="wdg-grid-workspace-layout__drag-handle"
+            aria-label="Drag widget"
+            {...attributes}
+            {...listeners}
+          />
+          <GridCellDebugOverlay
+            instanceId={item.instanceId}
+            widgetId={item.widgetId}
+            savedGrid={item.grid}
+            displayGrid={displayGrid}
+            elementRef={cellRef}
+            containerRef={containerRef}
+          />
+        </>
       )}
       {renderWidget(item)}
       {editMode && canResize && !isDragOverlaySource && (
-        <GridResizeHandle instanceId={item.instanceId} edge="east" />
+        <>
+          <GridResizeHandle instanceId={item.instanceId} edge="east" layoutBounds={layoutBounds} />
+          {layoutBounds.rows !== undefined && (
+            <GridResizeHandle instanceId={item.instanceId} edge="south" layoutBounds={layoutBounds} />
+          )}
+        </>
       )}
     </div>
   );
@@ -271,6 +285,14 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     await layoutService.moveWidget(item.instanceId, placement);
   };
 
+  const layoutBounds = useMemo<GridLayoutBounds>(
+    () => ({
+      columns: activeLayoutConfig.columns,
+      rows: activeLayoutConfig.rows,
+    }),
+    [activeLayoutConfig.columns, activeLayoutConfig.rows]
+  );
+
   const activeItem = activeId ? gridItems.find(i => i.instanceId === activeId) : undefined;
 
   if (!gridTemplate) {
@@ -321,6 +343,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
                 gridRow={style.gridRow}
                 displayGrid={style.displayGrid}
                 containerRef={gridRef}
+                layoutBounds={layoutBounds}
                 renderWidget={renderWidget}
               />
             );
@@ -336,6 +359,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
               gridRow=""
               displayGrid={activeItem.grid}
               containerRef={gridRef}
+              layoutBounds={layoutBounds}
               renderWidget={renderWidget}
               isDragOverlaySource
             />

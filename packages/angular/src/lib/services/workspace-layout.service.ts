@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import type {
+  GridLayoutBounds,
   GridPlacement,
   WidgetId,
   WidgetLayoutItem,
@@ -91,9 +92,21 @@ export class WorkspaceLayoutService {
   resizeWidget(
     instanceId: string,
     columnDelta: number,
-    edge: 'east' | 'west' = 'east'
+    edge: 'east' | 'west' = 'east',
+    bounds?: Partial<GridLayoutBounds>
   ): Observable<WorkspaceConfig> {
-    return from(this.requireState().resizeWidget(instanceId, columnDelta, edge)).pipe(
+    return from(this.requireState().resizeWidget(instanceId, columnDelta, edge, bounds)).pipe(
+      tap(ws => this.syncState(ws))
+    );
+  }
+
+  resizeWidgetRows(
+    instanceId: string,
+    rowDelta: number,
+    edge: 'south' | 'north' = 'south',
+    bounds?: Partial<GridLayoutBounds>
+  ): Observable<WorkspaceConfig> {
+    return from(this.requireState().resizeWidgetRows(instanceId, rowDelta, edge, bounds)).pipe(
       tap(ws => this.syncState(ws))
     );
   }

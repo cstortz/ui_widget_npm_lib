@@ -55,6 +55,21 @@
   pointer-events: none;
 }
 
+.wdg-grid-workspace-layout__drag-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  height: 1.75rem;
+  z-index: 6;
+  cursor: grab;
+  touch-action: none;
+}
+
+.wdg-grid-workspace-layout__drag-handle:active {
+  cursor: grabbing;
+}
+
 .wdg-grid-workspace-layout__placeholder {
   padding: 1rem;
   color: rgba(0, 0, 0, 0.54);

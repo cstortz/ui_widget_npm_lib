@@ -61,6 +61,12 @@ export interface LayoutPermissions {
   reorder?: boolean;
 }
 
+/** Live column/row counts from the viewport (for resize and move validation) */
+export interface GridLayoutBounds {
+  columns: number;
+  rows?: number;
+}
+
 export interface WidgetSystemOptions {
   layout?: Partial<WorkspaceLayoutConfig>;
   permissions?: LayoutPermissions;

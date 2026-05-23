@@ -1,10 +1,15 @@
 .wdg-grid-resize-handle {
   position: absolute;
+  z-index: 10;
+  touch-action: none;
+}
+
+.wdg-grid-resize-handle[data-edge='east'],
+.wdg-grid-resize-handle[data-edge='west'] {
   top: 0;
   bottom: 0;
   width: 8px;
   cursor: ew-resize;
-  z-index: 2;
 }
 
 .wdg-grid-resize-handle[data-edge='east'] {
@@ -13,4 +18,20 @@
 
 .wdg-grid-resize-handle[data-edge='west'] {
   left: -4px;
+}
+
+.wdg-grid-resize-handle[data-edge='south'],
+.wdg-grid-resize-handle[data-edge='north'] {
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.wdg-grid-resize-handle[data-edge='south'] {
+  bottom: -4px;
+}
+
+.wdg-grid-resize-handle[data-edge='north'] {
+  top: -4px;
 }

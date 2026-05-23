@@ -1,4 +1,5 @@
 import type {
+  GridLayoutBounds,
   GridPlacement,
   WidgetId,
   WidgetLayoutItem,
@@ -99,9 +100,21 @@ export class WorkspaceLayoutService {
   async resizeWidget(
     instanceId: string,
     columnDelta: number,
-    edge: 'east' | 'west' = 'east'
+    edge: 'east' | 'west' = 'east',
+    bounds?: Partial<GridLayoutBounds>
   ): Promise<WorkspaceConfig> {
-    const ws = await this.requireState().resizeWidget(instanceId, columnDelta, edge);
+    const ws = await this.requireState().resizeWidget(instanceId, columnDelta, edge, bounds);
+    this.syncState(ws);
+    return ws;
+  }
+
+  async resizeWidgetRows(
+    instanceId: string,
+    rowDelta: number,
+    edge: 'south' | 'north' = 'south',
+    bounds?: Partial<GridLayoutBounds>
+  ): Promise<WorkspaceConfig> {
+    const ws = await this.requireState().resizeWidgetRows(instanceId, rowDelta, edge, bounds);
     this.syncState(ws);
     return ws;
   }

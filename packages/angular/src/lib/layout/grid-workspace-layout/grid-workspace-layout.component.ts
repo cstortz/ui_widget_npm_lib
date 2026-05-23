@@ -15,7 +15,11 @@ import {
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
-import type { GridPlacement, WidgetLayoutItem } from '@ncs_software/widget-system';
+import type {
+  GridLayoutBounds,
+  GridPlacement,
+  WidgetLayoutItem,
+} from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
@@ -93,6 +97,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
           >
             <div *cdkDragPlaceholder class="wdg-grid-workspace-layout__drag-placeholder"></div>
             @if (editMode) {
+              <div class="wdg-grid-workspace-layout__drag-handle" cdkDragHandle aria-label="Drag widget"></div>
               <wdg-grid-cell-debug
                 [instanceId]="item.instanceId"
                 [widgetId]="item.widgetId"
@@ -114,7 +119,18 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
               </div>
             }
             @if (editMode && permissions.resize) {
-              <div [wdgGridResizeHandle]="item.instanceId" edge="east"></div>
+              <div
+                [wdgGridResizeHandle]="item.instanceId"
+                edge="east"
+                [layoutBounds]="layoutBounds()"
+              ></div>
+              @if (layoutBounds().rows !== undefined) {
+                <div
+                  [wdgGridResizeHandle]="item.instanceId"
+                  edge="south"
+                  [layoutBounds]="layoutBounds()"
+                ></div>
+              }
             }
           </wdg-grid-cell>
         }
@@ -181,6 +197,21 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
       .wdg-grid-workspace-layout__cell--edit.cdk-drag-dragging {
         cursor: grabbing;
         z-index: 3;
+      }
+
+      .wdg-grid-workspace-layout__drag-handle {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 1.75rem;
+        z-index: 6;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .wdg-grid-workspace-layout__drag-handle:active {
+        cursor: grabbing;
       }
 
       .wdg-grid-workspace-layout__drag-placeholder {
@@ -310,6 +341,11 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
   protected displayGrid(instanceId: string): GridPlacement {
     const cell = this.gridTemplate()?.items.find(i => i.instanceId === instanceId);
     return cell?.displayGrid ?? { colStart: 1, colEnd: 2, rowStart: 1, rowEnd: 2 };
+  }
+
+  protected layoutBounds(): GridLayoutBounds {
+    const config = this.activeLayoutConfig();
+    return { columns: config.columns, rows: config.rows };
   }
 
   ngAfterViewInit(): void {

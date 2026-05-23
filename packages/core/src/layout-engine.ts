@@ -217,28 +217,70 @@ export function clampPlacement(
   return { colStart, colEnd, rowStart, rowEnd };
 }
 
-/** Snap a column span change from horizontal drag delta (px) */
+/** Snap a column span change from horizontal drag delta (px). East keeps colStart fixed. */
 export function snapResize(
   placement: GridPlacement,
   columnDelta: number,
   columns: number,
-  edge: 'east' | 'west' = 'east'
+  edge: 'east' | 'west' = 'east',
+  rows?: number
 ): GridPlacement {
+  const minSpan = 1;
   if (edge === 'east') {
+    const colStart = placement.colStart;
+    const span = Math.max(
+      minSpan,
+      Math.min(placement.colEnd - colStart + columnDelta, columns - colStart + 1)
+    );
     return clampPlacement(
-      {
-        ...placement,
-        colEnd: placement.colEnd + columnDelta,
-      },
-      columns
+      { ...placement, colStart, colEnd: colStart + span },
+      columns,
+      rows
     );
   }
+  const colEnd = placement.colEnd;
+  const span = Math.max(
+    minSpan,
+    Math.min(colEnd - (placement.colStart + columnDelta), colEnd)
+  );
   return clampPlacement(
-    {
-      ...placement,
-      colStart: placement.colStart + columnDelta,
-    },
-    columns
+    { ...placement, colStart: colEnd - span, colEnd },
+    columns,
+    rows
+  );
+}
+
+/** Snap a row span change from vertical drag delta (px). South keeps rowStart fixed. */
+export function snapResizeRows(
+  placement: GridPlacement,
+  rowDelta: number,
+  rows: number,
+  edge: 'south' | 'north' = 'south',
+  columns?: number
+): GridPlacement {
+  const minSpan = 1;
+  const columnCount = columns ?? Number.MAX_SAFE_INTEGER;
+  if (edge === 'south') {
+    const rowStart = placement.rowStart;
+    const span = Math.max(
+      minSpan,
+      Math.min(placement.rowEnd - rowStart + rowDelta, rows - rowStart + 1)
+    );
+    return clampPlacement(
+      { ...placement, rowStart, rowEnd: rowStart + span },
+      columnCount,
+      rows
+    );
+  }
+  const rowEnd = placement.rowEnd;
+  const span = Math.max(
+    minSpan,
+    Math.min(rowEnd - (placement.rowStart + rowDelta), rowEnd)
+  );
+  return clampPlacement(
+    { ...placement, rowStart: rowEnd - span, rowEnd },
+    columnCount,
+    rows
   );
 }
 
