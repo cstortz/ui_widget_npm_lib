@@ -9,13 +9,17 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import type { WidgetLayoutItem } from '@ncs_software/widget-system';
+import type { GridPlacement, WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
   columnWidthPx,
+  columnStridePx,
+  findOverlappingInstanceIds,
+  formatGridMoveRejection,
   layoutConfigForContainerWidth,
   placementFromDragDelta,
+  proposedFootprintRect,
   resolveLayoutConfig,
   rowsForContainerHeight,
   toCssGridTemplate,
@@ -26,12 +30,10 @@ import {
   useWorkspace,
   useWorkspaceLayoutService,
 } from '../widget-state-context.js';
+import { GridCellDebugOverlay } from './GridCellDebugOverlay.js';
 import { GridResizeHandle } from './GridResizeHandle.js';
 import { measureGridCellRects } from './grid-measure.js';
 import './GridWorkspaceLayout.css';
-
-const OVERLAP_MESSAGE = 'That spot is occupied — choose an empty area.';
-const OUT_OF_BOUNDS_MESSAGE = 'Keep the widget fully inside the workspace.';
 
 export interface GridWorkspaceLayoutProps {
   editMode?: boolean;
@@ -44,6 +46,8 @@ function DraggableGridCell({
   canResize,
   gridColumn,
   gridRow,
+  displayGrid,
+  containerRef,
   renderWidget,
   isDragOverlaySource,
 }: {
@@ -52,9 +56,12 @@ function DraggableGridCell({
   canResize: boolean;
   gridColumn: string;
   gridRow: string;
+  displayGrid: GridPlacement;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   renderWidget: (item: WidgetLayoutItem) => React.ReactNode;
   isDragOverlaySource?: boolean;
 }) {
+  const cellRef = useRef<HTMLDivElement>(null);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: item.instanceId,
     disabled: !editMode,
@@ -67,14 +74,31 @@ function DraggableGridCell({
     visibility: isDragging && !isDragOverlaySource ? 'hidden' : undefined,
   };
 
+  const setRefs = (node: HTMLDivElement | null) => {
+    cellRef.current = node;
+    if (!isDragOverlaySource) {
+      setNodeRef(node);
+    }
+  };
+
   return (
     <div
-      ref={isDragOverlaySource ? undefined : setNodeRef}
+      ref={isDragOverlaySource ? undefined : setRefs}
       style={style}
       data-wdg-instance-id={item.instanceId}
       className={`wdg-grid-workspace-layout__cell${editMode ? ' wdg-grid-workspace-layout__cell--edit' : ''}${isDragging && !isDragOverlaySource ? ' wdg-grid-workspace-layout__cell--dragging' : ''}`}
       {...(editMode && !isDragOverlaySource ? { ...attributes, ...listeners } : {})}
     >
+      {editMode && !isDragOverlaySource && (
+        <GridCellDebugOverlay
+          instanceId={item.instanceId}
+          widgetId={item.widgetId}
+          savedGrid={item.grid}
+          displayGrid={displayGrid}
+          elementRef={cellRef}
+          containerRef={containerRef}
+        />
+      )}
       {renderWidget(item)}
       {editMode && canResize && !isDragOverlaySource && (
         <GridResizeHandle instanceId={item.instanceId} edge="east" />
@@ -123,7 +147,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     feedbackTimer.current = setTimeout(() => {
       setLayoutFeedback(null);
       feedbackTimer.current = null;
-    }, 3000);
+    }, 5000);
   };
 
   const gridItems = useMemo(
@@ -160,8 +184,39 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const cellStyle = (instanceId: string) => {
     const cell = gridTemplate?.items.find(i => i.instanceId === instanceId);
     return cell
-      ? { gridColumn: cell.gridColumn, gridRow: cell.gridRow }
-      : { gridColumn: '', gridRow: '' };
+      ? {
+          gridColumn: cell.gridColumn,
+          gridRow: cell.gridRow,
+          displayGrid: cell.displayGrid,
+        }
+      : { gridColumn: '', gridRow: '', displayGrid: null as GridPlacement | null };
+  };
+
+  const buildMoveRejectionMessage = (
+    rejection: 'out_of_bounds' | 'overlap',
+    item: WidgetLayoutItem,
+    placement: GridPlacement,
+    measuredRects: Map<string, import('@ncs_software/widget-system').PixelRect>
+  ) => {
+    const draggedRect = measuredRects.get(item.instanceId);
+    const draggedHeight = draggedRect?.height ?? activeLayoutConfig.rowHeightPx;
+    const attemptedPixel = proposedFootprintRect(placement, draggedHeight, activeLayoutConfig);
+    const overlappingIds =
+      rejection === 'overlap'
+        ? findOverlappingInstanceIds(
+            item.instanceId,
+            placement,
+            draggedHeight,
+            measuredRects,
+            activeLayoutConfig
+          )
+        : undefined;
+    return formatGridMoveRejection(rejection, {
+      attempted: placement,
+      saved: item.grid,
+      overlappingIds,
+      attemptedPixel,
+    });
   };
 
   const onDragStart = (event: DragStartEvent) => {
@@ -208,12 +263,8 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
       activeLayoutConfig,
       measuredRects
     );
-    if (rejection === 'out_of_bounds') {
-      showLayoutFeedback(OUT_OF_BOUNDS_MESSAGE);
-      return;
-    }
-    if (rejection === 'overlap') {
-      showLayoutFeedback(OVERLAP_MESSAGE);
+    if (rejection === 'out_of_bounds' || rejection === 'overlap') {
+      showLayoutFeedback(buildMoveRejectionMessage(rejection, item, placement, measuredRects));
       return;
     }
 
@@ -229,6 +280,14 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="wdg-grid-workspace-layout-wrapper" ref={wrapperRef}>
+        {editMode && (
+          <div className="wdg-grid-workspace-layout__debug-bar" aria-hidden="true">
+            Viewport {Math.round(containerSize.width)}×{Math.round(containerSize.height)}px ·{' '}
+            {gridTemplate.columnCount} cols · track {columnWidthPx(activeLayoutConfig).toFixed(2)}px
+            · stride {columnStridePx(activeLayoutConfig).toFixed(2)}px · gap{' '}
+            {activeLayoutConfig.gapPx}px
+          </div>
+        )}
         <div
           ref={gridRef}
           data-testid="grid-workspace"
@@ -246,6 +305,9 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
         >
           {gridItems.map(item => {
             const style = cellStyle(item.instanceId);
+            if (!style.displayGrid) {
+              return null;
+            }
             return (
               <DraggableGridCell
                 key={item.instanceId}
@@ -254,6 +316,8 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
                 canResize={!!permissions.resize}
                 gridColumn={style.gridColumn}
                 gridRow={style.gridRow}
+                displayGrid={style.displayGrid}
+                containerRef={gridRef}
                 renderWidget={renderWidget}
               />
             );
@@ -267,6 +331,8 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
               canResize={false}
               gridColumn=""
               gridRow=""
+              displayGrid={activeItem.grid}
+              containerRef={gridRef}
               renderWidget={renderWidget}
               isDragOverlaySource
             />

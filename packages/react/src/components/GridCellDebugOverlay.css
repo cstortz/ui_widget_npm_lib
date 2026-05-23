@@ -1,0 +1,63 @@
+.wdg-grid-cell-debug {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  pointer-events: none;
+  padding: 0.35rem 0.45rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: #fff;
+  background: rgba(18, 18, 18, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.wdg-grid-cell-debug__title {
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.wdg-grid-cell-debug__line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wdg-grid-cell-debug__line--warn {
+  color: #ffcc80;
+}
+
+.wdg-grid-cell-debug__label {
+  display: inline-block;
+  min-width: 3.25rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.wdg-grid-cell-debug__meta {
+  margin-top: 0.15rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.6rem;
+}
+
+.wdg-grid-workspace-layout__debug-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  padding: 0.35rem 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #fff;
+  background: rgba(25, 118, 210, 0.92);
+  pointer-events: none;
+}
+
+.wdg-grid-workspace-layout__feedback {
+  max-width: min(96vw, 56rem);
+  white-space: pre-wrap;
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}

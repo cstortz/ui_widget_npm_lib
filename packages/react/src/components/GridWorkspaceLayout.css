@@ -56,11 +56,28 @@
   bottom: 1rem;
   transform: translateX(-50%);
   width: max-content;
+  max-width: min(96vw, 56rem);
   padding: 0.5rem 1rem;
   border-radius: 4px;
   background: rgba(33, 33, 33, 0.92);
   color: #fff;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   pointer-events: none;
   z-index: 4;
+}
+
+.wdg-grid-workspace-layout__debug-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  padding: 0.35rem 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #fff;
+  background: rgba(25, 118, 210, 0.92);
+  pointer-events: none;
 }

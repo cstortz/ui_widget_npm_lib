@@ -77,7 +77,7 @@ export function registerNotesCornerDropTests(demoPath: string): void {
       expect(after).toEqual(before);
       await page
         .getByRole('status')
-        .filter({ hasText: 'Keep the widget fully inside the workspace' })
+        .filter({ hasText: 'Out of bounds' })
         .waitFor();
     });
   });

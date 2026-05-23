@@ -141,6 +141,7 @@ export function toCssGridTemplate(
         instanceId: item.instanceId,
         gridColumn: `${clamped.colStart} / ${clamped.colEnd}`,
         gridRow: `${item.grid.rowStart} / ${item.grid.rowEnd}`,
+        displayGrid: clamped,
       };
     }),
   };

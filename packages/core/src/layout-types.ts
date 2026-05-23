@@ -69,6 +69,8 @@ export interface CssGridItemStyle {
   instanceId: WidgetInstanceId;
   gridColumn: string;
   gridRow: string;
+  /** Placement used for CSS (may clamp columns when viewport narrows) */
+  displayGrid: GridPlacement;
 }
 
 export interface CssGridTemplate {

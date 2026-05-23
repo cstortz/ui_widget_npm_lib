@@ -66,6 +66,15 @@ export {
 
 export { createWidgetInstanceId, isWorkspaceV2 } from './layout-utils.js';
 
+export {
+  gridPlacementSpan,
+  placementsDiffer,
+  formatGridPlacementSummary,
+  formatPixelFootprint,
+  findOverlappingInstanceIds,
+  formatGridMoveRejection,
+} from './grid-placement-debug.js';
+
 export type {
   WidgetId,
   PanelPosition,

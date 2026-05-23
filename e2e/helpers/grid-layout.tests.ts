@@ -59,7 +59,7 @@ export function registerGridLayoutTests(demoPath: string): void {
       expect(notesAfter).toEqual(notesBefore);
       await page
         .getByRole('status')
-        .filter({ hasText: 'Keep the widget fully inside the workspace' })
+        .filter({ hasText: 'Out of bounds' })
         .waitFor();
     });
 
@@ -77,7 +77,7 @@ export function registerGridLayoutTests(demoPath: string): void {
 
       expect(notesAfter).toEqual(notesBefore);
       expect(checklistAfter).toEqual(checklistBefore);
-      await page.getByRole('status').filter({ hasText: 'That spot is occupied' }).waitFor();
+      await page.getByRole('status').filter({ hasText: 'Overlap' }).waitFor();
     });
   });
 }
