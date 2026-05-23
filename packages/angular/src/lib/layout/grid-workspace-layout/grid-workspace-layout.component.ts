@@ -81,7 +81,26 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
           >
             <div *cdkDragPlaceholder class="wdg-grid-workspace-layout__drag-placeholder"></div>
             @if (editMode) {
-              <div class="wdg-grid-workspace-layout__drag-handle" cdkDragHandle aria-label="Drag widget"></div>
+              <div
+                class="wdg-grid-workspace-layout__drag-handle"
+                cdkDragHandle
+                aria-label="Drag widget"
+                title="Drag widget"
+              >
+                <svg
+                  class="wdg-grid-workspace-layout__drag-icon"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <circle cx="5" cy="4" r="1.25" fill="currentColor" />
+                  <circle cx="11" cy="4" r="1.25" fill="currentColor" />
+                  <circle cx="5" cy="8" r="1.25" fill="currentColor" />
+                  <circle cx="11" cy="8" r="1.25" fill="currentColor" />
+                  <circle cx="5" cy="12" r="1.25" fill="currentColor" />
+                  <circle cx="11" cy="12" r="1.25" fill="currentColor" />
+                </svg>
+              </div>
             }
             @if (bodyTemplate) {
               <ng-container
@@ -180,15 +199,29 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         position: absolute;
         left: 0;
         top: 0;
-        width: 2rem;
-        height: 1.75rem;
-        z-index: 6;
+        width: 2.75rem;
+        height: 2.75rem;
+        z-index: 12;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: grab;
         touch-action: none;
+        color: rgba(0, 0, 0, 0.54);
+        background: rgba(25, 118, 210, 0.08);
+        border: 1px solid rgba(25, 118, 210, 0.18);
+        border-radius: 4px 0 0 0;
       }
 
       .wdg-grid-workspace-layout__drag-handle:active {
         cursor: grabbing;
+        background: rgba(25, 118, 210, 0.14);
+      }
+
+      .wdg-grid-workspace-layout__drag-icon {
+        width: 1rem;
+        height: 1rem;
+        pointer-events: none;
       }
 
       .wdg-grid-workspace-layout__drag-placeholder {

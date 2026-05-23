@@ -107,5 +107,27 @@ export function registerGridLayoutTests(demoPath: string): void {
       expect(state?.colStart).toBe(1);
       expect(state?.colEnd).toBe(Number(before.colEnd) - 1);
     });
+
+    test('supports horizontal then vertical resize on the same widget', async ({ page }) => {
+      await enterEditMode(page);
+
+      const notesCell = await cellForWidget(page, 'Notes');
+      const before = await readGridPlacement(notesCell);
+      const { colStride, rowStride } = await readGridDragStrides(page);
+
+      await resizeCellBy(page, notesCell, 'east', -colStride, 0);
+      const afterWidth = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      expect(Number(afterWidth.colEnd)).toBe(Number(before.colEnd) - 1);
+
+      await resizeCellBy(page, notesCell, 'south', 0, rowStride);
+      const afterHeight = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      const state = await readWidgetGridFromState(page, 'demo-notes');
+
+      expect(Number(afterHeight.colStart)).toBe(1);
+      expect(Number(afterHeight.colEnd)).toBe(Number(before.colEnd) - 1);
+      expect(Number(afterHeight.rowEnd)).toBe(Number(before.rowEnd) + 1);
+      expect(state?.colEnd).toBe(Number(before.colEnd) - 1);
+      expect(state?.rowEnd).toBe(Number(before.rowEnd) + 1);
+    });
   });
 }

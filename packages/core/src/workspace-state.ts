@@ -290,23 +290,54 @@ export class WorkspaceState {
     return this.persist();
   }
 
+  applyResizeWidget(
+    instanceId: string,
+    columnDelta: number,
+    edge: 'east' | 'west' = 'east',
+    bounds?: Partial<GridLayoutBounds>
+  ): boolean {
+    const item = this.getItem(instanceId);
+    if (!item || item.mode !== 'grid') {
+      return false;
+    }
+    const columns = bounds?.columns ?? this.layoutConfig.columns;
+    const rows = bounds?.rows;
+    const grid = snapResize(item.grid, columnDelta, columns, edge, rows);
+    if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
+      return false;
+    }
+    this.workspace = this.touch(this.replaceItem({ ...item, grid }));
+    return true;
+  }
+
+  applyResizeWidgetRows(
+    instanceId: string,
+    rowDelta: number,
+    edge: 'south' | 'north' = 'south',
+    bounds?: Partial<GridLayoutBounds>
+  ): boolean {
+    const item = this.getItem(instanceId);
+    if (!item || item.mode !== 'grid' || bounds?.rows === undefined) {
+      return false;
+    }
+    const columns = bounds.columns ?? this.layoutConfig.columns;
+    const grid = snapResizeRows(item.grid, rowDelta, bounds.rows, edge, columns);
+    if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
+      return false;
+    }
+    this.workspace = this.touch(this.replaceItem({ ...item, grid }));
+    return true;
+  }
+
   async resizeWidget(
     instanceId: string,
     columnDelta: number,
     edge: 'east' | 'west' = 'east',
     bounds?: Partial<GridLayoutBounds>
   ): Promise<WorkspaceConfig> {
-    const item = this.getItem(instanceId);
-    if (!item || item.mode !== 'grid') {
+    if (!this.applyResizeWidget(instanceId, columnDelta, edge, bounds)) {
       return this.workspace;
     }
-    const columns = bounds?.columns ?? this.layoutConfig.columns;
-    const rows = bounds?.rows;
-    const grid = snapResize(item.grid, columnDelta, columns, edge, rows);
-    if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
-      return this.workspace;
-    }
-    this.workspace = this.touch(this.replaceItem({ ...item, grid }));
     return this.persist();
   }
 
@@ -316,16 +347,9 @@ export class WorkspaceState {
     edge: 'south' | 'north' = 'south',
     bounds?: Partial<GridLayoutBounds>
   ): Promise<WorkspaceConfig> {
-    const item = this.getItem(instanceId);
-    if (!item || item.mode !== 'grid' || bounds?.rows === undefined) {
+    if (!this.applyResizeWidgetRows(instanceId, rowDelta, edge, bounds)) {
       return this.workspace;
     }
-    const columns = bounds.columns ?? this.layoutConfig.columns;
-    const grid = snapResizeRows(item.grid, rowDelta, bounds.rows, edge, columns);
-    if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
-      return this.workspace;
-    }
-    this.workspace = this.touch(this.replaceItem({ ...item, grid }));
     return this.persist();
   }
 

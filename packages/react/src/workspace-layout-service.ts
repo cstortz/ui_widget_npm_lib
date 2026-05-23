@@ -17,6 +17,7 @@ type Listener = (workspace: WorkspaceConfig) => void;
 export class WorkspaceLayoutService {
   private state: WorkspaceState | null = null;
   private readonly listeners = new Set<Listener>();
+  private mutationQueue: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly adapter: WidgetStateAdapter,
@@ -103,9 +104,15 @@ export class WorkspaceLayoutService {
     edge: 'east' | 'west' = 'east',
     bounds?: Partial<GridLayoutBounds>
   ): Promise<WorkspaceConfig> {
-    const ws = await this.requireState().resizeWidget(instanceId, columnDelta, edge, bounds);
-    this.syncState(ws);
-    return ws;
+    return this.enqueueMutation(async () => {
+      const state = this.requireState();
+      const changed = state.applyResizeWidget(instanceId, columnDelta, edge, bounds);
+      if (changed) {
+        this.syncState(state.config);
+        return state.persist();
+      }
+      return state.config;
+    });
   }
 
   async resizeWidgetRows(
@@ -114,9 +121,15 @@ export class WorkspaceLayoutService {
     edge: 'south' | 'north' = 'south',
     bounds?: Partial<GridLayoutBounds>
   ): Promise<WorkspaceConfig> {
-    const ws = await this.requireState().resizeWidgetRows(instanceId, rowDelta, edge, bounds);
-    this.syncState(ws);
-    return ws;
+    return this.enqueueMutation(async () => {
+      const state = this.requireState();
+      const changed = state.applyResizeWidgetRows(instanceId, rowDelta, edge, bounds);
+      if (changed) {
+        this.syncState(state.config);
+        return state.persist();
+      }
+      return state.config;
+    });
   }
 
   async moveWidget(instanceId: string, grid: GridPlacement): Promise<WorkspaceConfig> {
@@ -153,5 +166,14 @@ export class WorkspaceLayoutService {
   private syncState(workspace: WorkspaceConfig): void {
     this.state!.applyWorkspace(workspace);
     this.notify();
+  }
+
+  private enqueueMutation<T>(fn: () => Promise<T>): Promise<T> {
+    const result = this.mutationQueue.then(fn, fn);
+    this.mutationQueue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
   }
 }

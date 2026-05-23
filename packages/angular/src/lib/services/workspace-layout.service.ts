@@ -25,6 +25,7 @@ export class WorkspaceLayoutService {
 
   private state: WorkspaceState | null = null;
   private readonly workspaceSubject = new BehaviorSubject<WorkspaceConfig | null>(null);
+  private mutationQueue: Promise<unknown> = Promise.resolve();
 
   readonly workspace$: Observable<WorkspaceConfig | null> = this.workspaceSubject.asObservable();
 
@@ -95,9 +96,15 @@ export class WorkspaceLayoutService {
     edge: 'east' | 'west' = 'east',
     bounds?: Partial<GridLayoutBounds>
   ): Observable<WorkspaceConfig> {
-    return from(this.requireState().resizeWidget(instanceId, columnDelta, edge, bounds)).pipe(
-      tap(ws => this.syncState(ws))
-    );
+    return this.enqueueMutation(async () => {
+      const state = this.requireState();
+      const changed = state.applyResizeWidget(instanceId, columnDelta, edge, bounds);
+      if (changed) {
+        this.syncState(state.config);
+        return state.persist();
+      }
+      return state.config;
+    });
   }
 
   resizeWidgetRows(
@@ -106,9 +113,15 @@ export class WorkspaceLayoutService {
     edge: 'south' | 'north' = 'south',
     bounds?: Partial<GridLayoutBounds>
   ): Observable<WorkspaceConfig> {
-    return from(this.requireState().resizeWidgetRows(instanceId, rowDelta, edge, bounds)).pipe(
-      tap(ws => this.syncState(ws))
-    );
+    return this.enqueueMutation(async () => {
+      const state = this.requireState();
+      const changed = state.applyResizeWidgetRows(instanceId, rowDelta, edge, bounds);
+      if (changed) {
+        this.syncState(state.config);
+        return state.persist();
+      }
+      return state.config;
+    });
   }
 
   moveWidget(instanceId: string, grid: GridPlacement): Observable<WorkspaceConfig> {
@@ -151,5 +164,14 @@ export class WorkspaceLayoutService {
   private syncState(workspace: WorkspaceConfig): void {
     this.state!.applyWorkspace(workspace);
     this.workspaceSubject.next(this.state!.config);
+  }
+
+  private enqueueMutation<T>(fn: () => Promise<T>): Observable<T> {
+    const promise = this.mutationQueue.then(fn, fn);
+    this.mutationQueue = promise.then(
+      () => undefined,
+      () => undefined
+    );
+    return from(promise);
   }
 }
