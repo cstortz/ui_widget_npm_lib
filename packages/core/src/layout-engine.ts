@@ -47,13 +47,47 @@ export function gridRowStride(layoutConfig?: Partial<WorkspaceLayoutConfig>): nu
 }
 
 export function rowsForContainerHeight(
-  heightPx: number,
+  containerHeightPx: number,
   layoutConfig?: Partial<WorkspaceLayoutConfig>
 ): number {
-  if (heightPx <= 0) {
+  const layout = resolveLayoutConfig(layoutConfig);
+  if (containerHeightPx <= 0) {
     return 1;
   }
-  return Math.max(1, Math.ceil(heightPx / gridRowStride(layoutConfig)));
+  const stride = gridRowStride(layout);
+  return Math.max(1, Math.floor((containerHeightPx + layout.gapPx) / stride));
+}
+
+export function gridHeightForRows(
+  rowCount: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  return rowCount * layout.rowHeightPx + Math.max(0, rowCount - 1) * layout.gapPx;
+}
+
+/** Layout config with columns and rows derived from the live container size */
+export function layoutConfigForContainer(
+  containerWidthPx: number,
+  containerHeightPx: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): WorkspaceLayoutConfig {
+  const base = resolveLayoutConfig(layoutConfig);
+  return {
+    ...base,
+    columns: columnsForContainerWidth(containerWidthPx, base),
+    ...(containerHeightPx > 0
+      ? { rows: rowsForContainerHeight(containerHeightPx, base) }
+      : {}),
+  };
+}
+
+/** @deprecated use layoutConfigForContainer */
+export function layoutConfigForContainerWidth(
+  containerWidthPx: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): WorkspaceLayoutConfig {
+  return layoutConfigForContainer(containerWidthPx, 0, layoutConfig);
 }
 
 export function columnWidthPx(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
@@ -92,18 +126,6 @@ export function gridWidthForColumns(
   return columnCount * trackWidth + Math.max(0, columnCount - 1) * layout.gapPx;
 }
 
-/** Layout config with columns derived from the live container width */
-export function layoutConfigForContainerWidth(
-  containerWidthPx: number,
-  layoutConfig?: Partial<WorkspaceLayoutConfig>
-): WorkspaceLayoutConfig {
-  const base = resolveLayoutConfig(layoutConfig);
-  return {
-    ...base,
-    columns: columnsForContainerWidth(containerWidthPx, base),
-  };
-}
-
 export function gridContentWidth(
   layoutConfig?: Partial<WorkspaceLayoutConfig>,
   columnCount?: number
@@ -121,8 +143,14 @@ export function toCssGridTemplate(
   const layout = resolveLayoutConfig(layoutConfig);
   const visible = gridItems(items);
   const columns = Math.max(1, options?.columnCount ?? layout.columns);
-  const rowCount = Math.max(1, maxGridRow(visible), options?.minRows ?? 0);
-  const rowSizing = options?.rowSizing ?? 'content';
+  const rowCount = Math.max(
+    1,
+    maxGridRow(visible),
+    layout.rows ?? 0,
+    options?.rowCount ?? 0,
+    options?.minRows ?? 0
+  );
+  const rowSizing = options?.rowSizing ?? 'fixed';
   const rowTrack =
     rowSizing === 'fixed'
       ? `${layout.rowHeightPx}px`
@@ -136,11 +164,11 @@ export function toCssGridTemplate(
     rowCount,
     columnCount: columns,
     items: visible.map(item => {
-      const clamped = clampPlacement(item.grid, columns);
+      const clamped = clampPlacement(item.grid, columns, rowCount);
       return {
         instanceId: item.instanceId,
         gridColumn: `${clamped.colStart} / ${clamped.colEnd}`,
-        gridRow: `${item.grid.rowStart} / ${item.grid.rowEnd}`,
+        gridRow: `${clamped.rowStart} / ${clamped.rowEnd}`,
         displayGrid: clamped,
       };
     }),
@@ -149,7 +177,8 @@ export function toCssGridTemplate(
 
 export function clampPlacement(
   placement: GridPlacement,
-  columns: number
+  columns: number,
+  rows?: number
 ): GridPlacement {
   const colSpan = Math.max(1, placement.colEnd - placement.colStart);
   const rowSpan = Math.max(1, placement.rowEnd - placement.rowStart);
@@ -167,8 +196,23 @@ export function clampPlacement(
   colStart = Math.max(1, Math.min(colStart, columns - colSpan + 1));
   colEnd = colStart + colSpan;
 
-  const rowStart = Math.max(1, placement.rowStart);
-  const rowEnd = rowStart + rowSpan;
+  let rowStart = placement.rowStart;
+  let rowEnd = placement.rowEnd;
+  if (rows !== undefined) {
+    if (rowEnd > rows + 1) {
+      rowEnd = rows + 1;
+      rowStart = rowEnd - rowSpan;
+    }
+    if (rowStart < 1) {
+      rowStart = 1;
+      rowEnd = rowStart + rowSpan;
+    }
+    rowStart = Math.max(1, Math.min(rowStart, rows - rowSpan + 1));
+    rowEnd = rowStart + rowSpan;
+  } else {
+    rowStart = Math.max(1, placement.rowStart);
+    rowEnd = rowStart + rowSpan;
+  }
 
   return { colStart, colEnd, rowStart, rowEnd };
 }
@@ -366,6 +410,9 @@ export function isGridPlacementWithinContainer(
 ): boolean {
   const layout = resolveLayoutConfig(layoutConfig);
   if (placement.colStart < 1 || placement.colEnd > layout.columns + 1 || placement.rowStart < 1) {
+    return false;
+  }
+  if (layout.rows !== undefined && placement.rowEnd > layout.rows + 1) {
     return false;
   }
 

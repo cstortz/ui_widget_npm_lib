@@ -15,14 +15,24 @@
 }
 
 .wdg-grid-workspace-layout--edit {
-  background-image: repeating-linear-gradient(
-    90deg,
-    transparent 0,
-    transparent var(--wdg-grid-col-width, 94px),
-    rgba(25, 118, 210, 0.07) var(--wdg-grid-col-width, 94px),
-    rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-col-width, 94px) + 1px)
-  );
-  background-size: calc(var(--wdg-grid-col-width, 94px) + var(--wdg-grid-gap, 8px)) 100%;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent var(--wdg-grid-row-height, 80px),
+      rgba(25, 118, 210, 0.07) var(--wdg-grid-row-height, 80px),
+      rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-row-height, 80px) + 1px)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent var(--wdg-grid-col-width, 94px),
+      rgba(25, 118, 210, 0.07) var(--wdg-grid-col-width, 94px),
+      rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-col-width, 94px) + 1px)
+    );
+  background-size:
+    100% calc(var(--wdg-grid-row-height, 80px) + var(--wdg-grid-gap, 8px)),
+    calc(var(--wdg-grid-col-width, 94px) + var(--wdg-grid-gap, 8px)) 100%;
 }
 
 .wdg-grid-workspace-layout__cell {

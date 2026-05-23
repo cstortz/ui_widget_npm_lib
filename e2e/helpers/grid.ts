@@ -130,9 +130,10 @@ export async function readGridDragStrides(
     }
     const style = getComputedStyle(grid);
     const columnWidth = Number.parseFloat(style.getPropertyValue('--wdg-grid-col-width')) || 92 + 2 / 3;
+    const rowHeight = Number.parseFloat(style.getPropertyValue('--wdg-grid-row-height')) || 80;
     const gap = Number.parseFloat(style.getPropertyValue('--wdg-grid-gap')) || 8;
     const colStride = columnWidth + gap;
-    const rowStride = 88;
+    const rowStride = rowHeight + gap;
     return { colStride, rowStride };
   });
 }

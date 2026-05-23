@@ -17,11 +17,11 @@ import {
   columnStridePx,
   findOverlappingInstanceIds,
   formatGridMoveRejection,
-  layoutConfigForContainerWidth,
+  gridRowStride,
+  layoutConfigForContainer,
   placementFromDragDelta,
   proposedFootprintRect,
   resolveLayoutConfig,
-  rowsForContainerHeight,
   toCssGridTemplate,
   type GridContainerMetrics,
 } from '@ncs_software/widget-system';
@@ -161,25 +161,25 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   );
 
   const activeLayoutConfig = useMemo(() => {
-    if (containerSize.width <= 0) {
+    if (containerSize.width <= 0 && containerSize.height <= 0) {
       return baseLayoutConfig;
     }
-    return layoutConfigForContainerWidth(containerSize.width, baseLayoutConfig);
-  }, [baseLayoutConfig, containerSize.width]);
+    return layoutConfigForContainer(
+      containerSize.width,
+      containerSize.height,
+      baseLayoutConfig
+    );
+  }, [baseLayoutConfig, containerSize.width, containerSize.height]);
 
   const gridTemplate = useMemo(() => {
     if (!workspace?.items) {
       return null;
     }
-    const minRows =
-      editMode && containerSize.height > 0
-        ? rowsForContainerHeight(containerSize.height, activeLayoutConfig)
-        : undefined;
     return toCssGridTemplate(workspace.items, activeLayoutConfig, {
-      minRows,
       columnCount: activeLayoutConfig.columns,
+      rowCount: activeLayoutConfig.rows,
     });
-  }, [workspace, activeLayoutConfig, editMode, containerSize.height]);
+  }, [workspace, activeLayoutConfig]);
 
   const cellStyle = (instanceId: string) => {
     const cell = gridTemplate?.items.find(i => i.instanceId === instanceId);
@@ -283,15 +283,17 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
         {editMode && (
           <div className="wdg-grid-workspace-layout__debug-bar" aria-hidden="true">
             Viewport {Math.round(containerSize.width)}×{Math.round(containerSize.height)}px ·{' '}
-            {gridTemplate.columnCount} cols · track {columnWidthPx(activeLayoutConfig).toFixed(2)}px
-            · stride {columnStridePx(activeLayoutConfig).toFixed(2)}px · gap{' '}
-            {activeLayoutConfig.gapPx}px
+            {gridTemplate.columnCount} cols × {gridTemplate.rowCount} rows · track{' '}
+            {columnWidthPx(activeLayoutConfig).toFixed(2)}×{activeLayoutConfig.rowHeightPx}px ·
+            stride {columnStridePx(activeLayoutConfig).toFixed(2)}×
+            {gridRowStride(activeLayoutConfig).toFixed(2)}px · gap {activeLayoutConfig.gapPx}px
           </div>
         )}
         <div
           ref={gridRef}
           data-testid="grid-workspace"
           data-grid-columns={gridTemplate.columnCount}
+          data-grid-rows={gridTemplate.rowCount}
           className={`wdg-grid-workspace-layout${editMode ? ' wdg-grid-workspace-layout--edit' : ''}`}
           style={{
             display: 'grid',
@@ -300,6 +302,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
             gap: gridTemplate.gap,
             width: '100%',
             ['--wdg-grid-col-width' as string]: `${columnWidthPx(activeLayoutConfig)}px`,
+            ['--wdg-grid-row-height' as string]: `${activeLayoutConfig.rowHeightPx}px`,
             ['--wdg-grid-gap' as string]: `${activeLayoutConfig.gapPx}px`,
           }}
         >

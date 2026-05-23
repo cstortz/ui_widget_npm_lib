@@ -15,6 +15,8 @@ import {
   evaluateGridMove,
   isGridPlacementWithinContainer,
   columnsForContainerWidth,
+  rowsForContainerHeight,
+  layoutConfigForContainer,
 } from './layout-engine.js';
 import { migrateWorkspaceV1ToV2 } from './migrate-workspace.js';
 import { WidgetRegistry } from './widget-registry.js';
@@ -180,8 +182,12 @@ describe('LayoutEngine', () => {
         rowEnd: 2,
       }),
     ];
-    const css = toCssGridTemplate(items, undefined, { minRows: 20, rowSizing: 'fixed' });
-    assert.match(css.gridTemplateRows, /repeat\(20, 80px\)/);
+    const css = toCssGridTemplate(items, layoutConfigForContainer(1200, 1600), {
+      columnCount: 12,
+      rowCount: rowsForContainerHeight(1600),
+      rowSizing: 'fixed',
+    });
+    assert.match(css.gridTemplateRows, /repeat\(18, 80px\)/);
     assert.match(css.gridTemplateColumns, /repeat\(12, 92\.66666666666667px\)/);
   });
 
@@ -192,6 +198,16 @@ describe('LayoutEngine', () => {
     );
     assert.equal(clamped.colStart, 6);
     assert.equal(clamped.colEnd, 13);
+  });
+
+  it('preserves row span when clamping against the grid edge', () => {
+    const clamped = clampPlacement(
+      { colStart: 1, colEnd: 4, rowStart: 8, rowEnd: 10 },
+      12,
+      6
+    );
+    assert.equal(clamped.rowStart, 5);
+    assert.equal(clamped.rowEnd, 7);
   });
 
   it('rejects moves that extend past the workspace container', () => {
@@ -251,5 +267,11 @@ describe('LayoutEngine', () => {
     assert.equal(columnsForContainerWidth(1200), 12);
     assert.equal(columnsForContainerWidth(800), 8);
     assert.equal(columnsForContainerWidth(3840), 38);
+  });
+
+  it('derives row count from container height', () => {
+    assert.equal(rowsForContainerHeight(600), 6);
+    assert.equal(rowsForContainerHeight(800), 9);
+    assert.equal(rowsForContainerHeight(2160), 24);
   });
 });

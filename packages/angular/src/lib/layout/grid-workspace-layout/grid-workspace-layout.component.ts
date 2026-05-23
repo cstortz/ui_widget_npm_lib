@@ -23,11 +23,11 @@ import {
   columnStridePx,
   findOverlappingInstanceIds,
   formatGridMoveRejection,
-  layoutConfigForContainerWidth,
+  layoutConfigForContainer,
+  gridRowStride,
   placementFromDragDelta,
   proposedFootprintRect,
   resolveLayoutConfig,
-  rowsForContainerHeight,
   toCssGridTemplate,
   type GridContainerMetrics,
 } from '@ncs_software/widget-system';
@@ -57,9 +57,11 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         <div class="wdg-grid-workspace-layout__debug-bar" aria-hidden="true">
           Viewport {{ containerSize().width | number: '1.0-0' }}×{{
             containerSize().height | number: '1.0-0'
-          }}px · {{ gridTemplate()?.columnCount ?? 0 }} cols · track
-          {{ columnWidthPx() | number: '1.2-2' }}px · stride
-          {{ columnStridePx() | number: '1.2-2' }}px · gap {{ layoutGapPx() }}px
+          }}px · {{ gridTemplate()?.columnCount ?? 0 }} cols ×
+          {{ gridTemplate()?.rowCount ?? 0 }} rows · track
+          {{ columnWidthPx() | number: '1.2-2' }}×{{ rowHeightPx() }}px · stride
+          {{ columnStridePx() | number: '1.2-2' }}×{{ rowStridePx() | number: '1.2-2' }}px · gap
+          {{ layoutGapPx() }}px
         </div>
       }
       <div
@@ -73,7 +75,9 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         [style.gap]="gridTemplate()?.gap"
         [style.width]="'100%'"
         [attr.data-grid-columns]="gridTemplate()?.columnCount"
+        [attr.data-grid-rows]="gridTemplate()?.rowCount"
         [style.--wdg-grid-col-width.px]="columnWidthPx()"
+        [style.--wdg-grid-row-height.px]="rowHeightPx()"
         [style.--wdg-grid-gap.px]="layoutGapPx()"
       >
         @for (item of gridItems(); track item.instanceId) {
@@ -141,14 +145,24 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
       }
 
       .wdg-grid-workspace-layout--edit {
-        background-image: repeating-linear-gradient(
-          90deg,
-          transparent 0,
-          transparent var(--wdg-grid-col-width),
-          rgba(25, 118, 210, 0.07) var(--wdg-grid-col-width),
-          rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-col-width) + 1px)
-        );
-        background-size: calc(var(--wdg-grid-col-width) + var(--wdg-grid-gap)) 100%;
+        background-image:
+          repeating-linear-gradient(
+            0deg,
+            transparent 0,
+            transparent var(--wdg-grid-row-height),
+            rgba(25, 118, 210, 0.07) var(--wdg-grid-row-height),
+            rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-row-height) + 1px)
+          ),
+          repeating-linear-gradient(
+            90deg,
+            transparent 0,
+            transparent var(--wdg-grid-col-width),
+            rgba(25, 118, 210, 0.07) var(--wdg-grid-col-width),
+            rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-col-width) + 1px)
+          );
+        background-size:
+          100% calc(var(--wdg-grid-row-height) + var(--wdg-grid-gap)),
+          calc(var(--wdg-grid-col-width) + var(--wdg-grid-gap)) 100%;
       }
 
       .wdg-grid-workspace-layout__cell {
@@ -246,11 +260,11 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
   });
 
   protected readonly activeLayoutConfig = computed(() => {
-    const width = this.containerSize().width;
-    if (width <= 0) {
+    const { width, height } = this.containerSize();
+    if (width <= 0 && height <= 0) {
       return this.baseLayoutConfig();
     }
-    return layoutConfigForContainerWidth(width, this.baseLayoutConfig());
+    return layoutConfigForContainer(width, height, this.baseLayoutConfig());
   });
 
   protected readonly gridItems = computed(() => {
@@ -267,12 +281,9 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
       return null;
     }
     const layoutConfig = this.activeLayoutConfig();
-    const height = this.containerSize().height;
-    const minRows =
-      this.editMode && height > 0 ? rowsForContainerHeight(height, layoutConfig) : undefined;
     return toCssGridTemplate(ws.items, layoutConfig, {
-      minRows,
       columnCount: layoutConfig.columns,
+      rowCount: layoutConfig.rows,
     });
   });
 
@@ -286,6 +297,14 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
 
   protected columnStridePx(): number {
     return columnStridePx(this.activeLayoutConfig());
+  }
+
+  protected rowHeightPx(): number {
+    return this.activeLayoutConfig().rowHeightPx;
+  }
+
+  protected rowStridePx(): number {
+    return gridRowStride(this.activeLayoutConfig());
   }
 
   protected displayGrid(instanceId: string): GridPlacement {

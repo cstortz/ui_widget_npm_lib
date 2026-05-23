@@ -33,6 +33,8 @@ export interface WorkspaceTabBarConfig {
 
 export interface WorkspaceLayoutConfig {
   columns: number;
+  /** Live row track count derived from container height (optional until measured) */
+  rows?: number;
   rowHeightPx: number;
   gapPx: number;
   /** Fixed column track width in px (~92.67 at 12 cols / 1200px reference width) */
@@ -92,4 +94,6 @@ export interface ToCssGridTemplateOptions {
   rowSizing?: GridRowSizing;
   /** Live column count from viewport width (defaults to layout.columns) */
   columnCount?: number;
+  /** Live row count from viewport height (defaults to layout.rows) */
+  rowCount?: number;
 }
