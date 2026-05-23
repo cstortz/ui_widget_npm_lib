@@ -1,6 +1,6 @@
-import type { GridRowMetrics } from '@ncs_software/widget-system';
+import type { GridRowMetrics, PixelRect } from '@ncs_software/widget-system';
 
-const CELL_SELECTOR = '.wdg-grid-cell, wdg-grid-cell';
+const CELL_SELECTOR = '.wdg-grid-workspace-layout__cell, .wdg-grid-cell';
 
 /** Measure rendered row tops/heights from grid cells for accurate drag snap */
 export function measureGridRowMetrics(
@@ -13,10 +13,8 @@ export function measureGridRowMetrics(
 
   container.querySelectorAll(CELL_SELECTOR).forEach(node => {
     const el = node as HTMLElement;
-    if (
-      el.classList.contains('cdk-drag-dragging') ||
-      (excludeInstanceId && el.dataset['wdgInstanceId'] === excludeInstanceId)
-    ) {
+    const instanceId = el.dataset['wdgInstanceId'] ?? el.getAttribute('data-wdg-instance-id');
+    if (excludeInstanceId && instanceId === excludeInstanceId) {
       return;
     }
     const style = getComputedStyle(el);
@@ -35,4 +33,27 @@ export function measureGridRowMetrics(
   });
 
   return { rowTops, rowHeights };
+}
+
+/** Container-relative bounding boxes for each grid cell (includes content overflow height) */
+export function measureGridCellRects(container: HTMLElement): Map<string, PixelRect> {
+  const containerRect = container.getBoundingClientRect();
+  const rects = new Map<string, PixelRect>();
+
+  container.querySelectorAll(CELL_SELECTOR).forEach(node => {
+    const el = node as HTMLElement;
+    const instanceId = el.dataset['wdgInstanceId'] ?? el.getAttribute('data-wdg-instance-id');
+    if (!instanceId) {
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    rects.set(instanceId, {
+      left: rect.left - containerRect.left,
+      top: rect.top - containerRect.top,
+      width: rect.width,
+      height: rect.height,
+    });
+  });
+
+  return rects;
 }

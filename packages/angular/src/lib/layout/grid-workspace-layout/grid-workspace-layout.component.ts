@@ -27,6 +27,7 @@ import {
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
 import { GridCellComponent } from './grid-cell.component';
+import { measureGridCellRects } from './grid-measure';
 import { WidgetBodyDirective, type WidgetBodyContext } from '../widget-body.directive';
 import { GridResizeHandleDirective } from '../grid-resize-handle/grid-resize-handle.directive';
 import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
@@ -259,6 +260,8 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
       layout
     );
 
+    const measuredRects = measureGridCellRects(containerEl);
+
     event.source.reset();
 
     const rejection = evaluateGridMove(
@@ -267,7 +270,8 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
       placement,
       container.width,
       container.height,
-      layout
+      layout,
+      measuredRects
     );
     if (rejection === 'out_of_bounds') {
       this.showLayoutFeedback(GridWorkspaceLayoutComponent.OUT_OF_BOUNDS_MESSAGE);

@@ -203,6 +203,25 @@ describe('LayoutEngine', () => {
     );
   });
 
+  it('detects visual overlap using measured pixel footprints', () => {
+    const a = createLayoutItem('a', null, { colStart: 1, colEnd: 8, rowStart: 1, rowEnd: 2 });
+    const b = createLayoutItem('b', null, { colStart: 8, colEnd: 13, rowStart: 1, rowEnd: 2 });
+    const measuredRects = new Map([
+      [a.instanceId, { left: 0, top: 0, width: 650, height: 320 }],
+      [b.instanceId, { left: 700, top: 0, width: 480, height: 120 }],
+    ]);
+    const overlapPlacement = { colStart: 4, colEnd: 9, rowStart: 1, rowEnd: 2 };
+    assert.equal(
+      evaluateGridMove([a, b], b.instanceId, overlapPlacement, 1200, 600, undefined, measuredRects),
+      'overlap'
+    );
+    const clearPlacement = { colStart: 8, colEnd: 13, rowStart: 4, rowEnd: 5 };
+    assert.equal(
+      evaluateGridMove([a, b], b.instanceId, clearPlacement, 1200, 800, undefined, measuredRects),
+      null
+    );
+  });
+
   it('detects overlap against other grid items', () => {
     const a = createLayoutItem('a', null, { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 });
     const b = createLayoutItem('b', null, { colStart: 5, colEnd: 9, rowStart: 1, rowEnd: 2 });

@@ -1,4 +1,4 @@
-import type { GridRowMetrics } from '@ncs_software/widget-system';
+import type { GridRowMetrics, PixelRect } from '@ncs_software/widget-system';
 
 const CELL_SELECTOR = '.wdg-grid-workspace-layout__cell';
 
@@ -32,4 +32,27 @@ export function measureGridRowMetrics(
   });
 
   return { rowTops, rowHeights };
+}
+
+/** Container-relative bounding boxes for each grid cell (includes content overflow height) */
+export function measureGridCellRects(container: HTMLElement): Map<string, PixelRect> {
+  const containerRect = container.getBoundingClientRect();
+  const rects = new Map<string, PixelRect>();
+
+  container.querySelectorAll(CELL_SELECTOR).forEach(node => {
+    const el = node as HTMLElement;
+    const instanceId = el.dataset['wdgInstanceId'];
+    if (!instanceId) {
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    rects.set(instanceId, {
+      left: rect.left - containerRect.left,
+      top: rect.top - containerRect.top,
+      width: rect.width,
+      height: rect.height,
+    });
+  });
+
+  return rects;
 }

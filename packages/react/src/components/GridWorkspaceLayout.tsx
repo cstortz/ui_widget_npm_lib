@@ -25,6 +25,7 @@ import {
   useWorkspaceLayoutService,
 } from '../widget-state-context.js';
 import { GridResizeHandle } from './GridResizeHandle.js';
+import { measureGridCellRects } from './grid-measure.js';
 import './GridWorkspaceLayout.css';
 
 const OVERLAP_MESSAGE = 'That spot is occupied — choose an empty area.';
@@ -154,16 +155,20 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
-    setActiveId(null);
     if (!editMode || !permissions.reorder || !gridRef.current || !workspace?.items) {
+      setActiveId(null);
       return;
     }
 
     const { active } = event;
     const item = gridItems.find(i => i.instanceId === active.id);
     if (!item) {
+      setActiveId(null);
       return;
     }
+
+    const measuredRects = measureGridCellRects(gridRef.current);
+    setActiveId(null);
 
     const containerRect = gridRef.current.getBoundingClientRect();
     const container: GridContainerMetrics = {
@@ -186,7 +191,8 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
       placement,
       container.width,
       container.height,
-      layoutConfig
+      layoutConfig,
+      measuredRects
     );
     if (rejection === 'out_of_bounds') {
       showLayoutFeedback(OUT_OF_BOUNDS_MESSAGE);

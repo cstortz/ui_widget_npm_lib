@@ -321,6 +321,46 @@ export function isGridPlacementWithinContainer(
 
 export type GridMoveRejection = 'out_of_bounds' | 'overlap';
 
+export interface PixelRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export function pixelRectsOverlap(a: PixelRect, b: PixelRect): boolean {
+  return (
+    a.left < b.left + b.width &&
+    b.left < a.left + a.width &&
+    a.top < b.top + b.height &&
+    b.top < a.top + a.height
+  );
+}
+
+export function isPixelRectWithinContainer(
+  rect: PixelRect,
+  containerWidth: number,
+  containerHeight: number
+): boolean {
+  const epsilon = 0.5;
+  return (
+    rect.left >= -epsilon &&
+    rect.top >= -epsilon &&
+    rect.left + rect.width <= containerWidth + epsilon &&
+    rect.top + rect.height <= containerHeight + epsilon
+  );
+}
+
+export function proposedFootprintRect(
+  placement: GridPlacement,
+  containerWidth: number,
+  heightPx: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): PixelRect {
+  const { left, top, width } = placementPixelRect(placement, containerWidth, layoutConfig);
+  return { left, top, width, height: heightPx };
+}
+
 /** Returns null when the move is allowed; otherwise why it must revert to the original spot */
 export function evaluateGridMove(
   items: readonly WidgetLayoutItem[],
@@ -328,8 +368,34 @@ export function evaluateGridMove(
   placement: GridPlacement,
   containerWidth: number,
   containerHeight: number,
-  layoutConfig?: Partial<WorkspaceLayoutConfig>
+  layoutConfig?: Partial<WorkspaceLayoutConfig>,
+  /** Measured cell rects (container-relative) for visual overlap detection */
+  measuredRects?: ReadonlyMap<string, PixelRect>
 ): GridMoveRejection | null {
+  if (measuredRects) {
+    const dragged = measuredRects.get(instanceId);
+    if (dragged) {
+      const proposed = proposedFootprintRect(
+        placement,
+        containerWidth,
+        dragged.height,
+        layoutConfig
+      );
+      if (!isPixelRectWithinContainer(proposed, containerWidth, containerHeight)) {
+        return 'out_of_bounds';
+      }
+      for (const [otherId, otherRect] of measuredRects) {
+        if (otherId === instanceId) {
+          continue;
+        }
+        if (pixelRectsOverlap(proposed, otherRect)) {
+          return 'overlap';
+        }
+      }
+      return null;
+    }
+  }
+
   if (!isGridPlacementWithinContainer(placement, containerWidth, containerHeight, layoutConfig)) {
     return 'out_of_bounds';
   }
