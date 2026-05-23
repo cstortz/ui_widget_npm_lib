@@ -8,7 +8,7 @@ in Angular, React, Vue, or plain HTML.
 | [Widget-System-Library.pptx](./Widget-System-Library.pptx) | Product vision and npm package strategy |
 | [AGENTS-ui-widget-system.md](./AGENTS-ui-widget-system.md) | Implementation spec (types, API, components) |
 | [docs/DEVOPS.md](./docs/DEVOPS.md) | GitHub Actions, Helm, kubectl details |
-| [docs/GHCR.md](./docs/GHCR.md) | Container registry setup |
+| [docs/LAYOUT-V2.md](./docs/LAYOUT-V2.md) | v2 grid schema, edit mode, migration |
 
 ---
 
@@ -45,9 +45,112 @@ npm install @ncs_software/widget-system @ncs_software/widget-system-angular
 npm install @ncs_software/widget-system @ncs_software/widget-system-react
 ```
 
-### Angular
+### Angular (v3 grid)
 
-Register the adapter and add a workspace route:
+Register the adapter, widget registry, and default layout items:
+
+```typescript
+// app.config.ts
+import {
+  MemoryWidgetStateAdapter,
+  WidgetRegistry,
+  createLayoutItem,
+  findNextGridSlot,
+} from '@ncs_software/widget-system';
+import { provideWidgetSystem } from '@ncs_software/widget-system-angular';
+
+const registry = new WidgetRegistry();
+registry.register({
+  widgetId: 'demo-notes',
+  displayName: 'Notes',
+  description: 'Notes widget',
+  minWidthPx: 320,
+  canCollapse: true,
+});
+
+const defaultItems = [
+  createLayoutItem('demo-notes', 'demo', findNextGridSlot([], 12, 6)),
+];
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideWidgetSystem({
+      adapter: new MemoryWidgetStateAdapter(),
+      registry,
+      permissions: { editLayout: true },
+      defaultItems,
+    }),
+  ],
+};
+```
+
+```typescript
+// workspace-page.component.ts
+import {
+  WidgetBodyDirective,
+  WorkspaceShellComponent,
+} from '@ncs_software/widget-system-angular';
+
+@Component({
+  imports: [WorkspaceShellComponent, WidgetBodyDirective, MyWidgetHostComponent],
+  template: `
+    <wdg-workspace-shell workspaceId="demo">
+      <ng-template wdgWidgetBody let-item="item">
+        <my-widget-host [item]="item" />
+      </ng-template>
+    </wdg-workspace-shell>
+  `,
+})
+export class WorkspacePageComponent {}
+```
+
+Inside a widget, inject `WidgetStateService` to load/save typed state:
+
+```typescript
+this.widgetStateService
+  .loadState<MyState>(this.config.widgetId, this.config.contextId)
+  .subscribe(saved => this.data.set(saved?.payload ?? defaultState()));
+```
+
+### React (v3 grid)
+
+Wrap the app with `WidgetStateProvider` (registry + permissions optional):
+
+```tsx
+// main.tsx
+import { MemoryWidgetStateAdapter, WidgetRegistry } from '@ncs_software/widget-system';
+import { WidgetStateProvider } from '@ncs_software/widget-system-react';
+
+const registry = new WidgetRegistry();
+registry.register({ widgetId: 'demo-notes', displayName: 'Notes', /* ... */ });
+
+createRoot(document.getElementById('root')!).render(
+  <WidgetStateProvider adapter={new MemoryWidgetStateAdapter()} registry={registry}>
+    <App />
+  </WidgetStateProvider>
+);
+```
+
+```tsx
+// WorkspacePage.tsx
+import { WorkspaceShell } from '@ncs_software/widget-system-react';
+
+export function WorkspacePage() {
+  return (
+    <WorkspaceShell
+      workspaceId="demo"
+      renderWidget={item => <MyWidgetHost item={item} />}
+    />
+  );
+}
+```
+
+### Legacy two-panel (deprecated)
+
+The v1 two-panel API (`primaryPanel` / `secondaryPanel` slots, swap button) remains exported as `WorkspaceLayoutComponent` / `WorkspaceLayout` but is deprecated. New apps should use the grid workspace above. See [docs/LAYOUT-V2.md](./docs/LAYOUT-V2.md) for migration.
+
+<details>
+<summary>Angular two-panel example (deprecated)</summary>
 
 ```typescript
 // app.config.ts
@@ -57,13 +160,12 @@ import { provideWidgetSystem } from '@ncs_software/widget-system-angular';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideWidgetSystem({ adapter: new MemoryWidgetStateAdapter() }),
-    // use HttpWidgetStateAdapter({ baseUrl: '/api/widgets' }) in production
   ],
 };
 ```
 
 ```typescript
-// workspace-page.component.ts
+// workspace-page.component.ts — deprecated pattern
 import {
   WidgetPanelComponent,
   WorkspaceShellComponent,
@@ -74,7 +176,7 @@ import {
   template: `
     <wdg-workspace-shell workspaceId="job-123" [defaultWorkspace]="defaultWorkspace">
       <div primaryPanel>
-        <wdg-widget-panel title="Resume" (collapseChange)="onCollapse('resume-panel', $event)">
+        <wdg-widget-panel title="Resume">
           <my-resume-widget [config]="resumeConfig" />
         </wdg-widget-panel>
       </div>
@@ -89,61 +191,42 @@ import {
 export class WorkspacePageComponent { /* ... */ }
 ```
 
-Inside a widget, inject `WidgetStateService` to load/save typed state:
+</details>
 
-```typescript
-this.widgetStateService
-  .loadState<MyState>(this.config.widgetId, this.config.contextId)
-  .subscribe(saved => this.data.set(saved?.payload ?? defaultState()));
-```
-
-### React
-
-Wrap the app (or workspace route) with `WidgetStateProvider`:
+<details>
+<summary>React two-panel example (deprecated)</summary>
 
 ```tsx
 // main.tsx
 import { MemoryWidgetStateAdapter } from '@ncs_software/widget-system';
 import { WidgetStateProvider } from '@ncs_software/widget-system-react';
 
-const adapter = new MemoryWidgetStateAdapter();
-
 createRoot(document.getElementById('root')!).render(
-  <WidgetStateProvider adapter={adapter}>
+  <WidgetStateProvider adapter={new MemoryWidgetStateAdapter()}>
     <App />
   </WidgetStateProvider>
 );
 ```
 
 ```tsx
-// WorkspacePage.tsx
+// WorkspacePage.tsx — deprecated pattern
 import {
   WidgetPanel,
   WorkspaceShell,
-  useWidgetStateService,
 } from '@ncs_software/widget-system-react';
 
 export function WorkspacePage() {
-  const widgetStateService = useWidgetStateService();
-
   return (
     <WorkspaceShell
-      workspaceId="job-123"
-      defaultWorkspace={defaultWorkspace}
-      primaryPanel={
-        <WidgetPanel title="Resume" collapsed={collapsed} onCollapseChange={setCollapsed}>
-          <MyResumeWidget config={resumeConfig} />
-        </WidgetPanel>
-      }
-      secondaryPanel={
-        <WidgetPanel title="Guide">
-          <MyGuideWidget config={guideConfig} />
-        </WidgetPanel>
-      }
+      workspaceId="demo"
+      primaryPanel={<WidgetPanel title="Notes"><NotesWidget /></WidgetPanel>}
+      secondaryPanel={<WidgetPanel title="Checklist"><ChecklistWidget /></WidgetPanel>}
     />
   );
 }
 ```
+
+</details>
 
 Inside a widget, call `useWidgetStateService()` and `loadState` / `saveState` (Promise-based).
 

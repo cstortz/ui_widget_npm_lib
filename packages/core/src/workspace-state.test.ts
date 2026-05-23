@@ -163,14 +163,15 @@ describe('WorkspaceState', () => {
     await adapter.saveWorkspace(workspace);
 
     const state = new WorkspaceState({ adapter, workspace });
-    assert.equal(state.isSwapped(), false);
+    const before = state.gridItems().map(i => i.grid.colStart);
 
     await state.swapPanels();
-    assert.equal(state.isSwapped(), true);
-    assert.equal(state.panelOrder, 'primary-right');
+
+    const after = state.gridItems().map(i => i.grid.colStart);
+    assert.notDeepEqual(after, before);
 
     const reloaded = await adapter.loadWorkspace('ws-1');
-    assert.equal(reloaded?.panelOrder, 'primary-right');
+    assert.equal(reloaded?.items?.length, 2);
   });
 
   it('creates default workspace when none exists', async () => {
@@ -197,18 +198,37 @@ describe('WorkspaceState', () => {
       { contextType: 'job-application', contextId: 'job-99' }
     );
 
-    assert.equal(state.config.panelOrder, 'primary-left');
-    assert.equal(state.widgets.length, 1);
+    assert.equal(state.config.layoutVersion, 2);
+    assert.equal(state.items.length, 1);
   });
 
   it('updates widget collapse state', async () => {
+    const adapter = new MemoryWidgetStateAdapter();
+    const v1 = makeWorkspace();
+    const state = new WorkspaceState({
+      adapter,
+      workspace: v1,
+    });
+
+    const notesItem = state.items.find(i => i.widgetId === 'resume-panel');
+    assert.ok(notesItem);
+    await state.collapseItemToTab(notesItem!.instanceId);
+    assert.equal(state.getItem(notesItem!.instanceId)?.mode, 'tabbed');
+  });
+
+  it('adds and removes widgets in v2 layout', async () => {
     const adapter = new MemoryWidgetStateAdapter();
     const state = new WorkspaceState({
       adapter,
       workspace: makeWorkspace(),
     });
 
-    await state.setWidgetCollapsed('resume-panel', true);
-    assert.equal(state.getWidget('primary')?.collapsed, true);
+    await state.addWidget('chat', 'job-1');
+    assert.equal(state.items.length, 3);
+
+    const added = state.items.find(i => i.widgetId === 'chat');
+    assert.ok(added);
+    await state.removeWidget(added!.instanceId);
+    assert.equal(state.items.length, 2);
   });
 });

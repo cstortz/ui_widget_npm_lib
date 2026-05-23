@@ -14,7 +14,7 @@ describe('WidgetPanel', () => {
     );
 
     expect(screen.getByText('Panel body')).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Collapse panel' }));
+    await user.click(screen.getByRole('button', { name: 'Contract panel' }));
 
     expect(screen.queryByText('Panel body')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Expand panel' })).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe('WidgetPanel', () => {
       </WidgetPanel>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Collapse panel' }));
+    await user.click(screen.getByRole('button', { name: 'Contract panel' }));
     expect(onCollapseChange).toHaveBeenCalledWith(true);
 
     await user.click(screen.getByRole('button', { name: 'Expand panel' }));

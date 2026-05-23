@@ -46,13 +46,15 @@ export function parseWidgetState<T>(raw: unknown): WidgetState<T> {
   };
 }
 
+import { ensureWorkspaceV2 } from '../migrate-workspace.js';
+
 export function parseWorkspaceConfig(raw: unknown): WorkspaceConfig {
   const value = raw as WorkspaceConfig;
-  return {
+  return ensureWorkspaceV2({
     ...value,
     createdAt: new Date(value.createdAt),
     updatedAt: new Date(value.updatedAt),
-  };
+  });
 }
 
 export function parseWorkspaceList(raw: unknown): WorkspaceConfig[] {

@@ -33,9 +33,10 @@ user can arrange into workspaces suited to their current task — practicing
 for an interview, filling out an application, reviewing fit scores. Each
 workspace is a named, persistent layout of widgets the user has configured.
 
-**The current state** is a two-panel fixed layout with a swap button,
-introduced in Feature 7. The widget contract and persistence layer defined
-here are designed to scale to that end state without requiring a rewrite.
+**The current state** is a **12-column CSS grid workspace** (v2 layout schema) with
+runtime edit mode — drag reorder, column snap resize, expand/contract, and tab-bar
+collapse. The legacy two-panel layout remains available as deprecated wrappers for
+one release cycle; v1 workspaces auto-migrate on load.
 
 ---
 
@@ -43,13 +44,15 @@ here are designed to scale to that end state without requiring a rewrite.
 
 | Constraint | Rule |
 |---|---|
-| No drag-and-drop yet | The current implementation uses fixed panel positions with a swap button — do not implement a drag-and-drop grid system at this stage |
-| No resize handles yet | Panel widths are fixed at 50/50 — do not implement resizable panels at this stage |
+| Layout math in core | All grid placement, resize snap, and validation logic lives in `@ncs_software/widget-system` `LayoutEngine` — UI packages only handle pointer events |
+| v2 schema on save | Persisted workspaces must use `layoutVersion: 2` and `items[]`; run `ensureWorkspaceV2()` when loading legacy configs |
 | State is server-side | Widget state is persisted server-side, not in localStorage — it must roam across devices |
-| Widget contract is stable | The `WidgetConfig` and `WidgetState` interfaces defined here must not be changed without updating every widget that implements them |
-| Widgets are standalone | Every widget must function correctly when rendered alone, not only inside a two-panel layout |
-| No new framework dependencies | Existing Angular + Angular Material + Signals stack only |
-| Future-proof naming | Name classes, interfaces, and API endpoints as if the system will grow — avoid names like "TwoPanelLayout" that imply a permanent constraint |
+| Widget contract is stable | `WidgetConfig`, `WidgetState`, and `WidgetLayoutItem` changes require updating every widget and migration paths |
+| Widgets are standalone | Every widget must function correctly when rendered alone, not only inside a workspace grid |
+| Framework deps | Angular: existing Material + CDK drag-drop. React: `@dnd-kit/*` in the react package only |
+| Future-proof naming | Prefer `GridWorkspaceLayout`, `WidgetLayoutItem`, `WorkspaceLayoutService` over two-panel-specific names for new code |
+
+**Removed constraints (v3.0+):** drag-and-drop reorder, resize handles, and multi-widget grids are now supported in runtime edit mode. See [docs/LAYOUT-V2.md](./docs/LAYOUT-V2.md).
 
 ---
 

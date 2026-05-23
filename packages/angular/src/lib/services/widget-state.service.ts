@@ -6,7 +6,7 @@ import type {
   WorkspaceConfig,
   WorkspaceContextType,
 } from '@ncs_software/widget-system';
-import { stateKey } from '@ncs_software/widget-system';
+import { ensureWorkspaceV2, stateKey } from '@ncs_software/widget-system';
 import { from, Observable, of } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 import { WIDGET_STATE_ADAPTER } from '../tokens';
@@ -87,9 +87,9 @@ export class WidgetStateService {
     return this.loadWorkspace(workspaceId).pipe(
       switchMap(existing => {
         if (existing) {
-          return of(existing);
+          return of(ensureWorkspaceV2(existing));
         }
-        const created = factory();
+        const created = ensureWorkspaceV2(factory());
         return this.saveWorkspace(created);
       })
     );
