@@ -1,5 +1,12 @@
 # @ncs_software/widget-system-react
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [c1d86d6]
+  - @ncs_software/widget-system@2.0.0
+
 ## 1.2.1
 
 ### Patch Changes
