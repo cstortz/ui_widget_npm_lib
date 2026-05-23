@@ -22,6 +22,7 @@ import {
   snapResize,
   clampPlacement,
   moveItemOnGrid,
+  gridPlacementOverlapsOthers,
 } from './layout-engine.js';
 
 export interface WorkspaceStateOptions {
@@ -279,6 +280,10 @@ export class WorkspaceState {
       return this.workspace;
     }
     const moved = moveItemOnGrid(this.items, instanceId, grid, this.layoutConfig);
+    const next = moved.find(i => i.instanceId === instanceId);
+    if (!next || gridPlacementOverlapsOthers(moved, instanceId, next.grid)) {
+      return this.workspace;
+    }
     this.workspace = this.touch(moved);
     return this.persist();
   }
@@ -293,6 +298,9 @@ export class WorkspaceState {
       return this.workspace;
     }
     const grid = snapResize(item.grid, columnDelta, this.layoutConfig.columns, edge);
+    if (gridPlacementOverlapsOthers(this.items, instanceId, grid)) {
+      return this.workspace;
+    }
     this.workspace = this.touch(this.replaceItem({ ...item, grid }));
     return this.persist();
   }

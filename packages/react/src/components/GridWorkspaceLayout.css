@@ -1,9 +1,16 @@
+.wdg-grid-workspace-layout-wrapper {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
 .wdg-grid-workspace-layout {
   height: 100%;
   min-height: 320px;
   width: 100%;
   box-sizing: border-box;
   position: relative;
+  align-content: start;
 }
 
 .wdg-grid-workspace-layout--edit {
@@ -21,9 +28,12 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  align-self: start;
+  width: 100%;
+  height: auto;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .wdg-grid-workspace-layout__cell--edit {
@@ -34,4 +44,18 @@
 .wdg-grid-workspace-layout__placeholder {
   padding: 1rem;
   color: rgba(0, 0, 0, 0.54);
+}
+
+.wdg-grid-workspace-layout__feedback {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background: rgba(33, 33, 33, 0.92);
+  color: #fff;
+  font-size: 0.875rem;
+  pointer-events: none;
+  z-index: 4;
 }

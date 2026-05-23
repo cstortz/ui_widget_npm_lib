@@ -8,6 +8,7 @@ import {
   ViewChild,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -15,7 +16,10 @@ import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
+  clampPlacement,
+  gridPlacementOverlapsOthers,
   placementFromDragDelta,
+  resolveLayoutConfig,
   toCssGridTemplate,
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
@@ -76,6 +80,11 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         </wdg-grid-cell>
       }
     </div>
+    @if (layoutFeedback()) {
+      <div class="wdg-grid-workspace-layout__feedback" role="status">
+        {{ layoutFeedback() }}
+      </div>
+    }
   `,
   styles: [
     `
@@ -85,6 +94,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         width: 100%;
         box-sizing: border-box;
         position: relative;
+        align-content: start;
       }
 
       .wdg-grid-workspace-layout--edit {
@@ -100,6 +110,9 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
 
       .wdg-grid-workspace-layout__cell {
         position: relative;
+        align-self: start;
+        width: 100%;
+        height: auto;
       }
 
       .wdg-grid-workspace-layout__cell--edit {
@@ -122,10 +135,26 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         padding: 1rem;
         color: rgba(0, 0, 0, 0.54);
       }
+
+      .wdg-grid-workspace-layout__feedback {
+        position: absolute;
+        left: 50%;
+        bottom: 1rem;
+        transform: translateX(-50%);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        background: rgba(33, 33, 33, 0.92);
+        color: #fff;
+        font-size: 0.875rem;
+        pointer-events: none;
+        z-index: 4;
+      }
     `,
   ],
 })
 export class GridWorkspaceLayoutComponent {
+  private static readonly OVERLAP_MESSAGE = 'That spot is occupied — choose an empty area.';
+
   @Input() editMode = false;
   @Input() widgetBodyTemplate?: TemplateRef<WidgetBodyContext>;
   @ContentChild(WidgetBodyDirective) widgetBody?: WidgetBodyDirective;
@@ -134,6 +163,9 @@ export class GridWorkspaceLayoutComponent {
   protected readonly permissions = inject(LAYOUT_PERMISSIONS);
   private readonly layoutService = inject(WorkspaceLayoutService);
   private readonly layoutDefaults = inject(WORKSPACE_LAYOUT_CONFIG);
+
+  protected readonly layoutFeedback = signal<string | null>(null);
+  private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly workspace = toSignal(this.layoutService.workspace$, { initialValue: null });
 
@@ -174,19 +206,39 @@ export class GridWorkspaceLayoutComponent {
     const containerEl = this.gridContainer.nativeElement;
     const containerRect = containerEl.getBoundingClientRect();
     const ws = this.workspace();
-    const layout = { ...ws?.layout, ...this.layoutDefaults };
+    const layout = resolveLayoutConfig({ ...ws?.layout, ...this.layoutDefaults });
     const rowMetrics = measureGridRowMetrics(containerEl, item.instanceId);
 
-    const placement = placementFromDragDelta(
-      item.grid,
-      event.distance.x,
-      event.distance.y,
-      containerRect.width,
-      layout,
-      rowMetrics
+    const placement = clampPlacement(
+      placementFromDragDelta(
+        item.grid,
+        event.distance.x,
+        event.distance.y,
+        containerRect.width,
+        layout,
+        rowMetrics
+      ),
+      layout.columns
     );
 
     event.source.reset();
+
+    if (!ws?.items || gridPlacementOverlapsOthers(ws.items, item.instanceId, placement)) {
+      this.showLayoutFeedback(GridWorkspaceLayoutComponent.OVERLAP_MESSAGE);
+      return;
+    }
+
     this.layoutService.moveWidget(item.instanceId, placement).subscribe();
+  }
+
+  private showLayoutFeedback(message: string): void {
+    this.layoutFeedback.set(message);
+    if (this.feedbackTimer) {
+      clearTimeout(this.feedbackTimer);
+    }
+    this.feedbackTimer = setTimeout(() => {
+      this.layoutFeedback.set(null);
+      this.feedbackTimer = null;
+    }, 3000);
   }
 }

@@ -22,6 +22,7 @@ export {
   clampPlacement,
   snapResize,
   placementsOverlap,
+  gridPlacementOverlapsOthers,
   validateLayout,
   collapseToTab,
   restoreFromTab,

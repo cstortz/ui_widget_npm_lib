@@ -46,7 +46,7 @@ export function createDemoLayoutItems(contextId: string): WidgetLayoutItem[] {
       colStart: 1,
       colEnd: 8,
       rowStart: 1,
-      rowEnd: 3,
+      rowEnd: 2,
     }),
     createLayoutItem('demo-checklist', contextId, {
       colStart: 8,

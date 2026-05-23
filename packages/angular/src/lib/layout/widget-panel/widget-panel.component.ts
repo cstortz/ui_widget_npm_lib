@@ -55,10 +55,11 @@ import { MatIconModule } from '@angular/material/icon';
   styles: [
     `
       .wdg-widget-panel {
-        height: 100%;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        width: 100%;
+        height: auto;
       }
 
       .wdg-widget-panel__header {
@@ -73,9 +74,7 @@ import { MatIconModule } from '@angular/material/icon';
       }
 
       .wdg-widget-panel__content {
-        flex: 1;
         overflow: auto;
-        min-height: 0;
       }
 
       .wdg-widget-panel__content--hidden {

@@ -7,6 +7,7 @@ import {
   placementFromTopLeft,
   placementFromDragDelta,
   restoreFromTab,
+  gridPlacementOverlapsOthers,
   snapResize,
   toCssGridTemplate,
   validateLayout,
@@ -156,5 +157,28 @@ describe('LayoutEngine', () => {
     assert.ok(placement.colStart > original.colStart);
     assert.equal(placement.colEnd - placement.colStart, 3);
     assert.equal(placement.rowStart, original.rowStart);
+  });
+
+  it('detects overlap against other grid items', () => {
+    const a = createLayoutItem('a', null, { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 });
+    const b = createLayoutItem('b', null, { colStart: 5, colEnd: 9, rowStart: 1, rowEnd: 2 });
+    assert.equal(
+      gridPlacementOverlapsOthers([a, b], a.instanceId, {
+        colStart: 4,
+        colEnd: 8,
+        rowStart: 1,
+        rowEnd: 2,
+      }),
+      true
+    );
+    assert.equal(
+      gridPlacementOverlapsOthers([a, b], a.instanceId, {
+        colStart: 1,
+        colEnd: 5,
+        rowStart: 2,
+        rowEnd: 3,
+      }),
+      false
+    );
   });
 });

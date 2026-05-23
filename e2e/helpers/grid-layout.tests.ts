@@ -41,10 +41,27 @@ export function registerGridLayoutTests(demoPath: string): void {
       const linksBefore = await readGridPlacement(await cellForWidget(page, 'Quick Links'));
       const linksCell = await cellForWidget(page, 'Quick Links');
 
-      await dragCellBy(page, linksCell, -180, 0);
+      await dragCellBy(page, linksCell, 0, 220);
 
       const linksAfter = await readGridPlacement(await cellForWidget(page, 'Quick Links'));
-      expect(Number(linksAfter.colStart)).toBeLessThan(Number(linksBefore.colStart));
+      expect(Number(linksAfter.rowStart)).toBeGreaterThan(Number(linksBefore.rowStart));
+    });
+
+    test('rejects drop when placement overlaps another widget', async ({ page }) => {
+      await enterEditMode(page);
+
+      const notesBefore = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      const checklistCell = await cellForWidget(page, 'Checklist');
+      const checklistBefore = await readGridPlacement(checklistCell);
+
+      await dragCellBy(page, checklistCell, -400, 0);
+
+      const notesAfter = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      const checklistAfter = await readGridPlacement(await cellForWidget(page, 'Checklist'));
+
+      expect(notesAfter).toEqual(notesBefore);
+      expect(checklistAfter).toEqual(checklistBefore);
+      await page.getByRole('status').filter({ hasText: 'That spot is occupied' }).waitFor();
     });
   });
 }

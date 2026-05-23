@@ -50,7 +50,7 @@ export function toCssGridTemplate(
 
   return {
     gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
-    gridTemplateRows: `repeat(${rowCount}, minmax(${layout.rowHeightPx}px, auto))`,
+    gridTemplateRows: `repeat(${rowCount}, min-content)`,
     gap: `${layout.gapPx}px`,
     rowCount,
     items: visible.map(item => ({
@@ -101,6 +101,17 @@ export function placementsOverlap(a: GridPlacement, b: GridPlacement): boolean {
   const colsOverlap = a.colStart < b.colEnd && b.colStart < a.colEnd;
   const rowsOverlap = a.rowStart < b.rowEnd && b.rowStart < a.rowEnd;
   return colsOverlap && rowsOverlap;
+}
+
+/** True when placement intersects any other grid item in the workspace */
+export function gridPlacementOverlapsOthers(
+  items: readonly WidgetLayoutItem[],
+  instanceId: string,
+  placement: GridPlacement
+): boolean {
+  return gridItems(items).some(
+    item => item.instanceId !== instanceId && placementsOverlap(item.grid, placement)
+  );
 }
 
 export interface LayoutValidationIssue {

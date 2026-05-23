@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -10,7 +10,10 @@ import {
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
+  clampPlacement,
+  gridPlacementOverlapsOthers,
   placementFromDragDelta,
+  resolveLayoutConfig,
   toCssGridTemplate,
 } from '@ncs_software/widget-system';
 import {
@@ -21,6 +24,8 @@ import {
 import { GridResizeHandle } from './GridResizeHandle.js';
 import { measureGridRowMetrics } from './grid-measure.js';
 import './GridWorkspaceLayout.css';
+
+const OVERLAP_MESSAGE = 'That spot is occupied — choose an empty area.';
 
 export interface GridWorkspaceLayoutProps {
   editMode?: boolean;
@@ -75,7 +80,20 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const layoutService = useWorkspaceLayoutService();
   const { layout, permissions } = useLayoutConfig();
   const gridRef = useRef<HTMLDivElement>(null);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [layoutFeedback, setLayoutFeedback] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  const showLayoutFeedback = (message: string) => {
+    setLayoutFeedback(message);
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+    }
+    feedbackTimer.current = setTimeout(() => {
+      setLayoutFeedback(null);
+      feedbackTimer.current = null;
+    }, 3000);
+  };
 
   const gridItems = useMemo(
     () => (workspace?.items ? filterGridItems(workspace.items) : []),
@@ -110,14 +128,23 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
 
     const container = gridRef.current.getBoundingClientRect();
     const rowMetrics = measureGridRowMetrics(gridRef.current, String(active.id));
-    const placement = placementFromDragDelta(
-      item.grid,
-      event.delta.x,
-      event.delta.y,
-      container.width,
-      { ...workspace.layout, ...layout },
-      rowMetrics
+    const layoutConfig = resolveLayoutConfig({ ...workspace.layout, ...layout });
+    const placement = clampPlacement(
+      placementFromDragDelta(
+        item.grid,
+        event.delta.x,
+        event.delta.y,
+        container.width,
+        layoutConfig,
+        rowMetrics
+      ),
+      layoutConfig.columns
     );
+
+    if (gridPlacementOverlapsOthers(workspace.items, item.instanceId, placement)) {
+      showLayoutFeedback(OVERLAP_MESSAGE);
+      return;
+    }
 
     await layoutService.moveWidget(item.instanceId, placement);
   };
@@ -128,31 +155,38 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
 
   return (
     <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-      <div
-        ref={gridRef}
-        data-testid="grid-workspace"
-        className={`wdg-grid-workspace-layout${editMode ? ' wdg-grid-workspace-layout--edit' : ''}`}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: gridTemplate.gridTemplateColumns,
-          gridTemplateRows: gridTemplate.gridTemplateRows,
-          gap: gridTemplate.gap,
-        }}
-      >
-        {gridItems.map(item => {
-          const style = cellStyle(item.instanceId);
-          return (
-            <DraggableGridCell
-              key={item.instanceId}
-              item={item}
-              editMode={editMode && !!permissions.reorder}
-              canResize={!!permissions.resize}
-              gridColumn={style.gridColumn}
-              gridRow={style.gridRow}
-              renderWidget={renderWidget}
-            />
-          );
-        })}
+      <div className="wdg-grid-workspace-layout-wrapper">
+        <div
+          ref={gridRef}
+          data-testid="grid-workspace"
+          className={`wdg-grid-workspace-layout${editMode ? ' wdg-grid-workspace-layout--edit' : ''}`}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: gridTemplate.gridTemplateColumns,
+            gridTemplateRows: gridTemplate.gridTemplateRows,
+            gap: gridTemplate.gap,
+          }}
+        >
+          {gridItems.map(item => {
+            const style = cellStyle(item.instanceId);
+            return (
+              <DraggableGridCell
+                key={item.instanceId}
+                item={item}
+                editMode={editMode && !!permissions.reorder}
+                canResize={!!permissions.resize}
+                gridColumn={style.gridColumn}
+                gridRow={style.gridRow}
+                renderWidget={renderWidget}
+              />
+            );
+          })}
+        </div>
+        {layoutFeedback && (
+          <div className="wdg-grid-workspace-layout__feedback" role="status">
+            {layoutFeedback}
+          </div>
+        )}
       </div>
     </DndContext>
   );
