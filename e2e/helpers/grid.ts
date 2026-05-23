@@ -7,10 +7,20 @@ export interface GridPlacementStyle {
   rowEnd: string;
 }
 
+const widgetTitleSelector = 'mat-card-title, h2.wdg-widget-panel__title';
+
 export async function cellForWidget(page: Page, title: string): Promise<Locator> {
-  return page
-    .locator('.wdg-grid-workspace-layout__cell')
-    .filter({ has: page.getByRole('heading', { name: title, exact: true }) });
+  return page.locator('.wdg-grid-workspace-layout__cell').filter({
+    has: page.locator(widgetTitleSelector).filter({ hasText: title, exact: true }),
+  });
+}
+
+export async function waitForWorkspaceReady(page: Page, title = 'Notes'): Promise<void> {
+  await page
+    .locator(widgetTitleSelector)
+    .filter({ hasText: title, exact: true })
+    .first()
+    .waitFor();
 }
 
 export async function readGridPlacement(cell: Locator): Promise<GridPlacementStyle> {

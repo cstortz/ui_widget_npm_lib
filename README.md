@@ -26,7 +26,23 @@ Published under the **`@ncs_software`** org on npm:
 npm install
 npm run build
 npm run test
+npm run test:e2e
 ```
+
+### E2E grid layout tests (Playwright)
+
+Playwright drives the React and Angular demo apps to verify mosaic default layout and
+drag behavior (only the dragged widget moves).
+
+```bash
+# First run on a fresh machine
+npx playwright install chromium --with-deps
+
+npm run test:e2e
+```
+
+Tests live in `e2e/` and run in CI after unit tests. In the React demo console,
+`window.__WDG_TEST__?.getItems()` exposes the current workspace items for debugging.
 
 ---
 

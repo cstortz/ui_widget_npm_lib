@@ -744,6 +744,8 @@ GET    /api/widgets/workspaces
 
 | Layer | What to Test |
 |---|---|
+| `LayoutEngine` (core) | Grid snap, resize, validation, `placementFromDragDelta`, tab collapse/restore |
+| Playwright E2E (`e2e/`) | Mosaic default spans; drag updates only the dragged widget (React + Angular demos) |
 | `WidgetStateService` | Cache hit returns without HTTP call; 404 returns null not error; `saveState` updates cache after success |
 | `WorkspaceLayoutComponent` | `swapped` class applied when `panelOrder` is `primary-right`; swap persisted after button click; panel order restored from saved workspace on init |
 | `SwapButtonComponent` | `swap` event emitted on click; icon is `swap_vert` below 768px breakpoint |
