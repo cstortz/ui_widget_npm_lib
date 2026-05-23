@@ -13,6 +13,8 @@ import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
+  gridContentWidth,
+  columnWidthPx,
   placementFromDragDelta,
   resolveLayoutConfig,
   rowsForContainerHeight,
@@ -86,6 +88,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const layoutService = useWorkspaceLayoutService();
   const { layout, permissions } = useLayoutConfig();
   const gridRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [layoutFeedback, setLayoutFeedback] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -93,7 +96,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   useEffect(() => {
-    const el = gridRef.current;
+    const el = wrapperRef.current;
     if (!el) {
       return;
     }
@@ -139,7 +142,6 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
         : undefined;
     return toCssGridTemplate(workspace.items, layoutConfig, {
       minRows,
-      rowSizing: editMode ? 'fixed' : 'content',
     });
   }, [workspace, layoutConfig, editMode, containerHeight]);
 
@@ -170,12 +172,13 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     const measuredRects = measureGridCellRects(gridRef.current);
     setActiveId(null);
 
-    const containerRect = gridRef.current.getBoundingClientRect();
+    const gridRect = gridRef.current.getBoundingClientRect();
+    const viewportRect = wrapperRef.current?.getBoundingClientRect() ?? gridRect;
     const container: GridContainerMetrics = {
-      left: containerRect.left,
-      top: containerRect.top,
-      width: containerRect.width,
-      height: containerRect.height,
+      left: gridRect.left,
+      top: gridRect.top,
+      width: gridRect.width,
+      height: viewportRect.height,
     };
     const placement = placementFromDragDelta(
       item.grid,
@@ -214,7 +217,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <div className="wdg-grid-workspace-layout-wrapper">
+      <div className="wdg-grid-workspace-layout-wrapper" ref={wrapperRef}>
         <div
           ref={gridRef}
           data-testid="grid-workspace"
@@ -224,6 +227,9 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
             gridTemplateColumns: gridTemplate.gridTemplateColumns,
             gridTemplateRows: gridTemplate.gridTemplateRows,
             gap: gridTemplate.gap,
+            width: gridContentWidth(layoutConfig),
+            ['--wdg-grid-col-width' as string]: `${columnWidthPx(layoutConfig)}px`,
+            ['--wdg-grid-gap' as string]: `${layoutConfig.gapPx}px`,
           }}
         >
           {gridItems.map(item => {

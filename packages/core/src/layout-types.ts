@@ -35,6 +35,8 @@ export interface WorkspaceLayoutConfig {
   columns: number;
   rowHeightPx: number;
   gapPx: number;
+  /** Total grid width in px (columns × track width + gaps). Widgets do not shrink/grow with viewport. */
+  gridWidthPx?: number;
   tabBar: WorkspaceTabBarConfig;
 }
 
@@ -42,6 +44,7 @@ export const DEFAULT_WORKSPACE_LAYOUT: WorkspaceLayoutConfig = {
   columns: 12,
   rowHeightPx: 80,
   gapPx: 8,
+  gridWidthPx: 1200,
   tabBar: { enabled: true, maxVisible: 10 },
 };
 

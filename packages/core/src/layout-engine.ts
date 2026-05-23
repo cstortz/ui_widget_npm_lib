@@ -56,6 +56,17 @@ export function rowsForContainerHeight(
   return Math.max(1, Math.ceil(heightPx / gridRowStride(layoutConfig)));
 }
 
+export function columnWidthPx(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  const gridWidth = gridContentWidth(layout);
+  return (gridWidth - layout.gapPx * (layout.columns - 1)) / layout.columns;
+}
+
+export function gridContentWidth(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  return layout.gridWidthPx ?? 1200;
+}
+
 export function toCssGridTemplate(
   items: readonly WidgetLayoutItem[],
   layoutConfig?: Partial<WorkspaceLayoutConfig>,
@@ -68,10 +79,11 @@ export function toCssGridTemplate(
   const rowTrack =
     rowSizing === 'fixed'
       ? `${layout.rowHeightPx}px`
-      : `minmax(${layout.rowHeightPx}px, auto)`;
+      : `minmax(${layout.rowHeightPx}px, max-content)`;
+  const trackWidth = columnWidthPx(layout);
 
   return {
-    gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+    gridTemplateColumns: `repeat(${layout.columns}, ${trackWidth}px)`,
     gridTemplateRows: `repeat(${rowCount}, ${rowTrack})`,
     gap: `${layout.gapPx}px`,
     rowCount,
@@ -247,13 +259,11 @@ export interface GridRowMetrics {
 
 function pixelOffsetForPlacement(
   placement: GridPlacement,
-  containerWidth: number,
   layout: WorkspaceLayoutConfig
 ): { x: number; y: number } {
   const gap = layout.gapPx;
-  const columns = layout.columns;
   const stride = gridRowStride(layout);
-  const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
+  const trackWidth = columnWidthPx(layout);
   const colStride = trackWidth + gap;
   const x = (placement.colStart - 1) * colStride;
   const y = (placement.rowStart - 1) * stride;
@@ -276,14 +286,12 @@ function rowStartFromRelativeY(relY: number, layout: WorkspaceLayoutConfig): num
 
 export function placementPixelRect(
   placement: GridPlacement,
-  containerWidth: number,
   layoutConfig?: Partial<WorkspaceLayoutConfig>
 ): { left: number; top: number; width: number; height: number } {
   const layout = resolveLayoutConfig(layoutConfig);
   const gap = layout.gapPx;
-  const columns = layout.columns;
   const rowHeight = layout.rowHeightPx;
-  const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
+  const trackWidth = columnWidthPx(layout);
   const colStride = trackWidth + gap;
   const rowStride = gridRowStride(layout);
   const colSpan = placement.colEnd - placement.colStart;
@@ -309,7 +317,7 @@ export function isGridPlacementWithinContainer(
     return false;
   }
 
-  const { left, top, width, height } = placementPixelRect(placement, containerWidth, layoutConfig);
+  const { left, top, width, height } = placementPixelRect(placement, layoutConfig);
   const epsilon = 0.5;
   return (
     left >= -epsilon &&
@@ -353,11 +361,10 @@ export function isPixelRectWithinContainer(
 
 export function proposedFootprintRect(
   placement: GridPlacement,
-  containerWidth: number,
   heightPx: number,
   layoutConfig?: Partial<WorkspaceLayoutConfig>
 ): PixelRect {
-  const { left, top, width } = placementPixelRect(placement, containerWidth, layoutConfig);
+  const { left, top, width } = placementPixelRect(placement, layoutConfig);
   return { left, top, width, height: heightPx };
 }
 
@@ -377,7 +384,6 @@ export function evaluateGridMove(
     if (dragged) {
       const proposed = proposedFootprintRect(
         placement,
-        containerWidth,
         dragged.height,
         layoutConfig
       );
@@ -416,7 +422,7 @@ export function placementFromDragDelta(
   _rowMetrics?: GridRowMetrics
 ): GridPlacement {
   const layout = resolveLayoutConfig(layoutConfig);
-  const origin = pixelOffsetForPlacement(original, container.width, layout);
+  const origin = pixelOffsetForPlacement(original, layout);
 
   return placementFromTopLeft(
     container.left + origin.x + deltaX,
@@ -438,7 +444,6 @@ export function placementFromTopLeft(
   _rowMetrics?: GridRowMetrics
 ): GridPlacement {
   const layout = resolveLayoutConfig(layoutConfig);
-  const columns = layout.columns;
   const gap = layout.gapPx;
   const colSpan = current.colEnd - current.colStart;
   const rowSpan = current.rowEnd - current.rowStart;
@@ -446,7 +451,7 @@ export function placementFromTopLeft(
   const relX = topLeftX - container.left;
   const relY = topLeftY - container.top;
 
-  const trackWidth = (container.width - gap * (columns - 1)) / columns;
+  const trackWidth = columnWidthPx(layout);
   const colStart = colStartFromRelativeX(relX, trackWidth, gap);
   const rowStart = rowStartFromRelativeY(relY, layout);
 

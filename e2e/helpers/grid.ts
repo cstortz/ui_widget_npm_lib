@@ -84,23 +84,23 @@ export async function dragCellBy(
   await page.mouse.up();
 }
 
-/** Drag a widget toward the bottom while keeping it fully inside the workspace */
+/** Drag a widget toward the bottom of the visible workspace while staying in bounds */
 export async function dragCellToGridBottom(page: Page, title: string): Promise<void> {
-  const grid = page.getByTestId('grid-workspace');
-  const gridBox = await grid.boundingBox();
+  const wrapper = page.locator('.wdg-grid-workspace-layout-wrapper');
+  const wrapperBox = await wrapper.boundingBox();
   const cell = await cellForWidget(page, title);
   const cellBox = await cell.boundingBox();
-  if (!gridBox || !cellBox) {
+  if (!wrapperBox || !cellBox) {
     throw new Error('Grid workspace or cell has no bounding box');
   }
 
   const grabOffsetY = 24;
-  const maxTopLeftY = gridBox.y + gridBox.height - cellBox.height - 8;
+  const maxTopLeftY = wrapperBox.y + wrapperBox.height - cellBox.height - 8;
   const targetGrabY = maxTopLeftY + grabOffsetY;
   const startY = cellBox.y + grabOffsetY;
   const deltaY = targetGrabY - startY;
 
-  await dragCellBy(page, cell, 0, Math.max(deltaY, rowStrideForDrag()));
+  await dragCellBy(page, cell, 0, Math.max(deltaY, rowStrideForDrag() * 2));
 }
 
 function rowStrideForDrag(): number {
@@ -138,14 +138,10 @@ export async function readGridDragStrides(
   page: Page
 ): Promise<{ colStride: number; rowStride: number }> {
   return page.evaluate(() => {
-    const grid = document.querySelector('[data-testid="grid-workspace"]') as HTMLElement | null;
-    if (!grid) {
-      throw new Error('Grid workspace not found');
-    }
-    const rect = grid.getBoundingClientRect();
     const gap = 8;
     const columns = 12;
-    const trackWidth = (rect.width - gap * (columns - 1)) / columns;
+    const gridWidth = 1200;
+    const trackWidth = (gridWidth - gap * (columns - 1)) / columns;
     const colStride = trackWidth + gap;
     const rowStride = 88;
     return { colStride, rowStride };

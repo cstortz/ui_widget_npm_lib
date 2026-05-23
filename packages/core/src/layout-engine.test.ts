@@ -181,6 +181,7 @@ describe('LayoutEngine', () => {
     ];
     const css = toCssGridTemplate(items, undefined, { minRows: 20, rowSizing: 'fixed' });
     assert.match(css.gridTemplateRows, /repeat\(20, 80px\)/);
+    assert.match(css.gridTemplateColumns, /repeat\(12, 92\.66666666666667px\)/);
   });
 
   it('preserves column span when clamping against the grid edge', () => {

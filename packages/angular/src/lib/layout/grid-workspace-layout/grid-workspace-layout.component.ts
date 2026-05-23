@@ -19,6 +19,8 @@ import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
+  gridContentWidth,
+  columnWidthPx,
   placementFromDragDelta,
   resolveLayoutConfig,
   rowsForContainerHeight,
@@ -43,59 +45,69 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      #gridContainer
-      class="wdg-grid-workspace-layout"
-      data-testid="grid-workspace"
-      [class.wdg-grid-workspace-layout--edit]="editMode"
-      [style.display]="'grid'"
-      [style.gridTemplateColumns]="gridTemplate()?.gridTemplateColumns"
-      [style.gridTemplateRows]="gridTemplate()?.gridTemplateRows"
-      [style.gap]="gridTemplate()?.gap"
-      [style.--wdg-grid-columns]="layoutColumns()"
-    >
-      @for (item of gridItems(); track item.instanceId) {
-        <wdg-grid-cell
-          cdkDrag
-          [cdkDragDisabled]="!editMode || !permissions.reorder"
-          (cdkDragEnded)="onDragEnded($event, item)"
-          [instanceId]="item.instanceId"
-          [gridColumn]="cellStyle(item.instanceId)?.gridColumn ?? ''"
-          [gridRow]="cellStyle(item.instanceId)?.gridRow ?? ''"
-          class="wdg-grid-workspace-layout__cell"
-          [class.wdg-grid-workspace-layout__cell--edit]="editMode"
-        >
-          <div *cdkDragPlaceholder class="wdg-grid-workspace-layout__drag-placeholder"></div>
-          @if (bodyTemplate) {
-            <ng-container
-              *ngTemplateOutlet="
-                bodyTemplate;
-                context: { $implicit: item, item: item }
-              "
-            />
-          } @else {
-            <div class="wdg-grid-workspace-layout__placeholder">
-              {{ item.widgetId }}
-            </div>
-          }
-          @if (editMode && permissions.resize) {
-            <div [wdgGridResizeHandle]="item.instanceId" edge="east"></div>
-          }
-        </wdg-grid-cell>
+    <div class="wdg-grid-workspace-layout-wrapper" #gridWrapper>
+      <div
+        #gridContainer
+        class="wdg-grid-workspace-layout"
+        data-testid="grid-workspace"
+        [class.wdg-grid-workspace-layout--edit]="editMode"
+        [style.display]="'grid'"
+        [style.gridTemplateColumns]="gridTemplate()?.gridTemplateColumns"
+        [style.gridTemplateRows]="gridTemplate()?.gridTemplateRows"
+        [style.gap]="gridTemplate()?.gap"
+        [style.width.px]="gridWidthPx()"
+        [style.--wdg-grid-col-width.px]="columnWidthPx()"
+        [style.--wdg-grid-gap.px]="layoutGapPx()"
+      >
+        @for (item of gridItems(); track item.instanceId) {
+          <wdg-grid-cell
+            cdkDrag
+            [cdkDragDisabled]="!editMode || !permissions.reorder"
+            (cdkDragEnded)="onDragEnded($event, item)"
+            [instanceId]="item.instanceId"
+            [gridColumn]="cellStyle(item.instanceId)?.gridColumn ?? ''"
+            [gridRow]="cellStyle(item.instanceId)?.gridRow ?? ''"
+            class="wdg-grid-workspace-layout__cell"
+            [class.wdg-grid-workspace-layout__cell--edit]="editMode"
+          >
+            <div *cdkDragPlaceholder class="wdg-grid-workspace-layout__drag-placeholder"></div>
+            @if (bodyTemplate) {
+              <ng-container
+                *ngTemplateOutlet="
+                  bodyTemplate;
+                  context: { $implicit: item, item: item }
+                "
+              />
+            } @else {
+              <div class="wdg-grid-workspace-layout__placeholder">
+                {{ item.widgetId }}
+              </div>
+            }
+            @if (editMode && permissions.resize) {
+              <div [wdgGridResizeHandle]="item.instanceId" edge="east"></div>
+            }
+          </wdg-grid-cell>
+        }
+      </div>
+      @if (layoutFeedback()) {
+        <div class="wdg-grid-workspace-layout__feedback" role="status">
+          {{ layoutFeedback() }}
+        </div>
       }
     </div>
-    @if (layoutFeedback()) {
-      <div class="wdg-grid-workspace-layout__feedback" role="status">
-        {{ layoutFeedback() }}
-      </div>
-    }
   `,
   styles: [
     `
-      .wdg-grid-workspace-layout {
+      .wdg-grid-workspace-layout-wrapper {
+        position: relative;
         height: 100%;
-        min-height: 320px;
         width: 100%;
+        overflow: auto;
+      }
+
+      .wdg-grid-workspace-layout {
+        height: auto;
+        min-height: 100%;
         box-sizing: border-box;
         position: relative;
         align-content: start;
@@ -105,11 +117,11 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         background-image: repeating-linear-gradient(
           90deg,
           transparent 0,
-          transparent calc((100% - 11 * 8px) / 12),
-          rgba(25, 118, 210, 0.07) calc((100% - 11 * 8px) / 12),
-          rgba(25, 118, 210, 0.07) calc((100% - 11 * 8px) / 12 + 1px)
+          transparent var(--wdg-grid-col-width),
+          rgba(25, 118, 210, 0.07) var(--wdg-grid-col-width),
+          rgba(25, 118, 210, 0.07) calc(var(--wdg-grid-col-width) + 1px)
         );
-        background-size: calc((100% - 11 * 8px) / 12 + 8px) 100%;
+        background-size: calc(var(--wdg-grid-col-width) + var(--wdg-grid-gap)) 100%;
       }
 
       .wdg-grid-workspace-layout__cell {
@@ -147,10 +159,11 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
       }
 
       .wdg-grid-workspace-layout__feedback {
-        position: absolute;
+        position: sticky;
         left: 50%;
         bottom: 1rem;
         transform: translateX(-50%);
+        width: max-content;
         padding: 0.5rem 1rem;
         border-radius: 4px;
         background: rgba(33, 33, 33, 0.92);
@@ -170,6 +183,7 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
   @Input() widgetBodyTemplate?: TemplateRef<WidgetBodyContext>;
   @ContentChild(WidgetBodyDirective) widgetBody?: WidgetBodyDirective;
   @ViewChild('gridContainer') gridContainer?: ElementRef<HTMLElement>;
+  @ViewChild('gridWrapper') gridWrapper?: ElementRef<HTMLElement>;
 
   protected readonly permissions = inject(LAYOUT_PERMISSIONS);
   private readonly layoutService = inject(WorkspaceLayoutService);
@@ -202,12 +216,31 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
       this.editMode && height > 0 ? rowsForContainerHeight(height, layoutConfig) : undefined;
     return toCssGridTemplate(ws.items, layoutConfig, {
       minRows,
-      rowSizing: this.editMode ? 'fixed' : 'content',
     });
   });
 
+  protected gridWidthPx(): number {
+    const ws = this.workspace();
+    if (!ws?.items) {
+      return gridContentWidth(this.layoutDefaults);
+    }
+    return gridContentWidth({ ...ws.layout, ...this.layoutDefaults });
+  }
+
+  protected columnWidthPx(): number {
+    const ws = this.workspace();
+    if (!ws?.items) {
+      return columnWidthPx(this.layoutDefaults);
+    }
+    return columnWidthPx({ ...ws.layout, ...this.layoutDefaults });
+  }
+
+  protected layoutGapPx(): number {
+    return resolveLayoutConfig(this.layoutDefaults).gapPx;
+  }
+
   ngAfterViewInit(): void {
-    const el = this.gridContainer?.nativeElement;
+    const el = this.gridWrapper?.nativeElement;
     if (!el || typeof ResizeObserver === 'undefined') {
       return;
     }
@@ -220,10 +253,6 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
     this.resizeObserver.observe(el);
     this.containerHeight.set(el.getBoundingClientRect().height);
     this.destroyRef.onDestroy(() => this.resizeObserver?.disconnect());
-  }
-
-  protected layoutColumns(): number {
-    return this.gridTemplate() ? 12 : 12;
   }
 
   protected get bodyTemplate(): TemplateRef<WidgetBodyContext> | undefined {
@@ -241,15 +270,16 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
     }
 
     const containerEl = this.gridContainer.nativeElement;
-    const containerRect = containerEl.getBoundingClientRect();
+    const gridRect = containerEl.getBoundingClientRect();
+    const viewportRect = this.gridWrapper?.nativeElement.getBoundingClientRect() ?? gridRect;
     const ws = this.workspace();
     const layout = resolveLayoutConfig({ ...ws?.layout, ...this.layoutDefaults });
 
     const container: GridContainerMetrics = {
-      left: containerRect.left,
-      top: containerRect.top,
-      width: containerRect.width,
-      height: containerRect.height,
+      left: gridRect.left,
+      top: gridRect.top,
+      width: gridRect.width,
+      height: viewportRect.height,
     };
 
     const placement = placementFromDragDelta(

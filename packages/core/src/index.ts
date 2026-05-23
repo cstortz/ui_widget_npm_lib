@@ -23,6 +23,8 @@ export {
   toCssGridTemplate,
   gridRowStride,
   rowsForContainerHeight,
+  columnWidthPx,
+  gridContentWidth,
   clampPlacement,
   snapResize,
   placementsOverlap,
