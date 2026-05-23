@@ -1,5 +1,11 @@
 # @ncs_software/widget-system-angular
 
+## 1.2.2
+
+### Patch Changes
+
+- 5c121bc: Add vitest component tests for layout components and WidgetStateService.
+
 ## 1.1.0
 
 ### Minor Changes
