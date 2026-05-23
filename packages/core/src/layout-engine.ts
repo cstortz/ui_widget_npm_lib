@@ -65,10 +65,25 @@ export function clampPlacement(
   placement: GridPlacement,
   columns: number
 ): GridPlacement {
-  const colStart = Math.max(1, Math.min(placement.colStart, columns));
-  const colEnd = Math.max(colStart + 1, Math.min(placement.colEnd, columns + 1));
+  const colSpan = Math.max(1, placement.colEnd - placement.colStart);
+  const rowSpan = Math.max(1, placement.rowEnd - placement.rowStart);
+
+  let colStart = placement.colStart;
+  let colEnd = placement.colEnd;
+  if (colEnd > columns + 1) {
+    colEnd = columns + 1;
+    colStart = colEnd - colSpan;
+  }
+  if (colStart < 1) {
+    colStart = 1;
+    colEnd = colStart + colSpan;
+  }
+  colStart = Math.max(1, Math.min(colStart, columns - colSpan + 1));
+  colEnd = colStart + colSpan;
+
   const rowStart = Math.max(1, placement.rowStart);
-  const rowEnd = Math.max(rowStart + 1, placement.rowEnd);
+  const rowEnd = rowStart + rowSpan;
+
   return { colStart, colEnd, rowStart, rowEnd };
 }
 

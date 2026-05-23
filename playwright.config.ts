@@ -14,12 +14,12 @@ export default defineConfig({
   projects: [
     {
       name: 'react',
-      testMatch: '**/grid-layout.react.spec.ts',
+      testMatch: '**/*.{react,react-only}.spec.ts',
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:4173' },
     },
     {
       name: 'angular',
-      testMatch: '**/grid-layout.angular.spec.ts',
+      testMatch: '**/*.{angular,angular-only}.spec.ts',
       use: { ...devices['Desktop Chrome'], baseURL: 'http://127.0.0.1:4174' },
     },
   ],

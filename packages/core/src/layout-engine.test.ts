@@ -8,6 +8,7 @@ import {
   placementFromDragDelta,
   restoreFromTab,
   gridPlacementOverlapsOthers,
+  clampPlacement,
   snapResize,
   toCssGridTemplate,
   validateLayout,
@@ -157,6 +158,15 @@ describe('LayoutEngine', () => {
     assert.ok(placement.colStart > original.colStart);
     assert.equal(placement.colEnd - placement.colStart, 3);
     assert.equal(placement.rowStart, original.rowStart);
+  });
+
+  it('preserves column span when clamping against the grid edge', () => {
+    const clamped = clampPlacement(
+      { colStart: 10, colEnd: 17, rowStart: 1, rowEnd: 2 },
+      12
+    );
+    assert.equal(clamped.colStart, 6);
+    assert.equal(clamped.colEnd, 13);
   });
 
   it('detects overlap against other grid items', () => {
