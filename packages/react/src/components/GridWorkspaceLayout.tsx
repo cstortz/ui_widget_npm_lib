@@ -15,6 +15,7 @@ import {
   placementFromDragDelta,
   resolveLayoutConfig,
   toCssGridTemplate,
+  type GridContainerMetrics,
 } from '@ncs_software/widget-system';
 import {
   useLayoutConfig,
@@ -126,15 +127,21 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
       return;
     }
 
-    const container = gridRef.current.getBoundingClientRect();
+    const containerRect = gridRef.current.getBoundingClientRect();
     const rowMetrics = measureGridRowMetrics(gridRef.current, String(active.id));
     const layoutConfig = resolveLayoutConfig({ ...workspace.layout, ...layout });
+    const container: GridContainerMetrics = {
+      left: containerRect.left,
+      top: containerRect.top,
+      width: containerRect.width,
+      height: containerRect.height,
+    };
     const placement = clampPlacement(
       placementFromDragDelta(
         item.grid,
         event.delta.x,
         event.delta.y,
-        container.width,
+        container,
         layoutConfig,
         rowMetrics
       ),

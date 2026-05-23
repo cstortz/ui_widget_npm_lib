@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   VIEWPORT_4K,
   cellForWidget,
+  dragCellToGridBottom,
   dragCellToGridCorner,
   enterEditMode,
   exitEditMode,
@@ -49,5 +50,19 @@ export function registerNotesCornerDropTests(demoPath: string): void {
         expect(stateAfter).toEqual(expected);
       });
     }
+
+    test('Notes moves down when dragged toward bottom of grid', async ({ page }) => {
+      const before = await readWidgetGridFromState(page, 'demo-notes');
+      expect(before?.rowStart).toBe(1);
+
+      await dragCellToGridBottom(page, 'Notes');
+
+      const afterDrop = await readWidgetGridFromState(page, 'demo-notes');
+      expect(afterDrop?.rowStart ?? 0).toBeGreaterThanOrEqual(2);
+
+      await exitEditMode(page);
+      const afterEdit = await readWidgetGridFromState(page, 'demo-notes');
+      expect(afterEdit).toEqual(afterDrop);
+    });
   });
 }

@@ -21,6 +21,7 @@ import {
   placementFromDragDelta,
   resolveLayoutConfig,
   toCssGridTemplate,
+  type GridContainerMetrics,
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
 import { GridCellComponent } from './grid-cell.component';
@@ -209,12 +210,19 @@ export class GridWorkspaceLayoutComponent {
     const layout = resolveLayoutConfig({ ...ws?.layout, ...this.layoutDefaults });
     const rowMetrics = measureGridRowMetrics(containerEl, item.instanceId);
 
+    const container: GridContainerMetrics = {
+      left: containerRect.left,
+      top: containerRect.top,
+      width: containerRect.width,
+      height: containerRect.height,
+    };
+
     const placement = clampPlacement(
       placementFromDragDelta(
         item.grid,
         event.distance.x,
         event.distance.y,
-        containerRect.width,
+        container,
         layout,
         rowMetrics
       ),

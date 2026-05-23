@@ -84,6 +84,19 @@ export async function dragCellBy(
   await page.mouse.up();
 }
 
+/** Drag a widget toward the bottom inside the grid workspace bounds */
+export async function dragCellToGridBottom(page: Page, title: string): Promise<void> {
+  const grid = page.getByTestId('grid-workspace');
+  const gridBox = await grid.boundingBox();
+  const cell = await cellForWidget(page, title);
+  const cellBox = await cell.boundingBox();
+  if (!gridBox || !cellBox) {
+    throw new Error('Grid workspace or cell has no bounding box');
+  }
+  const deltaY = gridBox.y + gridBox.height - 48 - (cellBox.y + 24);
+  await dragCellBy(page, cell, 0, Math.max(deltaY, 200));
+}
+
 export async function dragCellToGridCorner(
   page: Page,
   title: string,

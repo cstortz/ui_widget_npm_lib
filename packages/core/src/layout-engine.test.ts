@@ -154,10 +154,28 @@ describe('LayoutEngine', () => {
 
   it('applies drag delta in column/row steps from original placement', () => {
     const original = { colStart: 8, colEnd: 11, rowStart: 2, rowEnd: 3 };
-    const placement = placementFromDragDelta(original, 200, 0, 1200);
+    const container = { left: 0, top: 0, width: 1200, height: 600 };
+    const placement = placementFromDragDelta(original, 200, 0, container);
     assert.ok(placement.colStart > original.colStart);
     assert.equal(placement.colEnd - placement.colStart, 3);
     assert.equal(placement.rowStart, original.rowStart);
+  });
+
+  it('maps vertical drag below tall rows to lower grid rows', () => {
+    const original = { colStart: 1, colEnd: 8, rowStart: 1, rowEnd: 2 };
+    const rowMetrics = {
+      rowTops: new Map([
+        [1, 0],
+        [2, 420],
+      ]),
+      rowHeights: new Map([
+        [1, 400],
+        [2, 120],
+      ]),
+    };
+    const container = { left: 0, top: 0, width: 1200, height: 2000 };
+    const placement = placementFromDragDelta(original, 0, 900, container, undefined, rowMetrics);
+    assert.ok(placement.rowStart >= 3);
   });
 
   it('preserves column span when clamping against the grid edge', () => {

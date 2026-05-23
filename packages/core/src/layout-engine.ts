@@ -223,6 +223,48 @@ export interface GridRowMetrics {
   rowHeights: ReadonlyMap<number, number>;
 }
 
+function pixelOffsetForPlacement(
+  placement: GridPlacement,
+  containerWidth: number,
+  layout: WorkspaceLayoutConfig,
+  rowMetrics?: GridRowMetrics
+): { x: number; y: number } {
+  const gap = layout.gapPx;
+  const columns = layout.columns;
+  const rowHeight = layout.rowHeightPx;
+  const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
+  const colStride = trackWidth + gap;
+  const x = (placement.colStart - 1) * colStride;
+
+  const measuredTop = rowMetrics?.rowTops.get(placement.rowStart);
+  const y =
+    measuredTop ?? (placement.rowStart - 1) * (rowHeight + gap);
+
+  return { x, y };
+}
+
+function averageRowStride(
+  rowMetrics: GridRowMetrics | undefined,
+  rowHeight: number,
+  gap: number
+): number {
+  if (!rowMetrics || rowMetrics.rowTops.size === 0) {
+    return rowHeight + gap;
+  }
+  const rows = [...rowMetrics.rowTops.keys()].sort((a, b) => a - b);
+  if (rows.length >= 2) {
+    const strides: number[] = [];
+    for (let i = 1; i < rows.length; i++) {
+      const prevTop = rowMetrics.rowTops.get(rows[i - 1]) ?? 0;
+      const nextTop = rowMetrics.rowTops.get(rows[i]) ?? prevTop;
+      strides.push(Math.max(rowHeight + gap, nextTop - prevTop));
+    }
+    return strides.reduce((sum, stride) => sum + stride, 0) / strides.length;
+  }
+  const height = rowMetrics.rowHeights.get(rows[0]) ?? rowHeight;
+  return height + gap;
+}
+
 function colStartFromRelativeX(
   relX: number,
   columns: number,
@@ -266,7 +308,8 @@ function rowStartFromRelativeY(
   const lastHeight = rowMetrics.rowHeights.get(lastRow) ?? rowHeight;
   const below = relY - (lastTop + lastHeight + gap);
   if (below >= 0) {
-    return lastRow + 1 + Math.floor(below / (rowHeight + gap));
+    const stride = averageRowStride(rowMetrics, rowHeight, gap);
+    return lastRow + 1 + Math.floor(below / stride);
   }
 
   return 1;
@@ -277,38 +320,20 @@ export function placementFromDragDelta(
   original: GridPlacement,
   deltaX: number,
   deltaY: number,
-  containerWidth: number,
+  container: GridContainerMetrics,
   layoutConfig?: Partial<WorkspaceLayoutConfig>,
   rowMetrics?: GridRowMetrics
 ): GridPlacement {
   const layout = resolveLayoutConfig(layoutConfig);
-  const columns = layout.columns;
-  const gap = layout.gapPx;
-  const rowHeight = layout.rowHeightPx;
-  const colSpan = original.colEnd - original.colStart;
-  const rowSpan = original.rowEnd - original.rowStart;
+  const origin = pixelOffsetForPlacement(original, container.width, layout, rowMetrics);
 
-  const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
-  const colStride = trackWidth + gap;
-  const colDelta = Math.round(deltaX / colStride);
-
-  let rowStride = rowHeight + gap;
-  if (rowMetrics && rowMetrics.rowTops.size >= 2) {
-    const rowIndices = [...rowMetrics.rowTops.keys()].sort((a, b) => a - b);
-    const firstTop = rowMetrics.rowTops.get(rowIndices[0]) ?? 0;
-    const lastTop = rowMetrics.rowTops.get(rowIndices[rowIndices.length - 1]) ?? firstTop;
-    rowStride = Math.max(rowStride, (lastTop - firstTop) / (rowIndices.length - 1));
-  }
-  const rowDelta = Math.round(deltaY / rowStride);
-
-  return clampPlacement(
-    {
-      colStart: original.colStart + colDelta,
-      colEnd: original.colStart + colDelta + colSpan,
-      rowStart: original.rowStart + rowDelta,
-      rowEnd: original.rowStart + rowDelta + rowSpan,
-    },
-    columns
+  return placementFromTopLeft(
+    container.left + origin.x + deltaX,
+    container.top + origin.y + deltaY,
+    container,
+    original,
+    layoutConfig,
+    rowMetrics
   );
 }
 
