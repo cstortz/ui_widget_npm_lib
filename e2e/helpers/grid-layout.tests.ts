@@ -47,6 +47,22 @@ export function registerGridLayoutTests(demoPath: string): void {
       expect(Number(linksAfter.rowStart)).toBeGreaterThan(Number(linksBefore.rowStart));
     });
 
+    test('rejects drop when widget would leave the workspace', async ({ page }) => {
+      await enterEditMode(page);
+
+      const notesBefore = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      const notesCell = await cellForWidget(page, 'Notes');
+
+      await dragCellBy(page, notesCell, 0, -400);
+
+      const notesAfter = await readGridPlacement(await cellForWidget(page, 'Notes'));
+      expect(notesAfter).toEqual(notesBefore);
+      await page
+        .getByRole('status')
+        .filter({ hasText: 'Keep the widget fully inside the workspace' })
+        .waitFor();
+    });
+
     test('rejects drop when placement overlaps another widget', async ({ page }) => {
       await enterEditMode(page);
 

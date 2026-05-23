@@ -72,3 +72,13 @@ export interface CssGridTemplate {
   items: CssGridItemStyle[];
   rowCount: number;
 }
+
+/** How grid row tracks are sized in the CSS template */
+export type GridRowSizing = 'content' | 'fixed';
+
+export interface ToCssGridTemplateOptions {
+  /** Minimum number of row tracks (e.g. fill edit-mode viewport) */
+  minRows?: number;
+  /** fixed = uniform rowHeightPx tracks; content = min-content rows */
+  rowSizing?: GridRowSizing;
+}

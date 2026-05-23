@@ -41,6 +41,10 @@
   outline-offset: -1px;
 }
 
+.wdg-grid-workspace-layout__cell--dragging {
+  pointer-events: none;
+}
+
 .wdg-grid-workspace-layout__placeholder {
   padding: 1rem;
   color: rgba(0, 0, 0, 0.54);

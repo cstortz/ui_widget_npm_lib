@@ -1,19 +1,21 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useDraggable,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
-  clampPlacement,
-  gridPlacementOverlapsOthers,
+  evaluateGridMove,
   placementFromDragDelta,
   resolveLayoutConfig,
+  rowsForContainerHeight,
   toCssGridTemplate,
   type GridContainerMetrics,
 } from '@ncs_software/widget-system';
@@ -23,10 +25,10 @@ import {
   useWorkspaceLayoutService,
 } from '../widget-state-context.js';
 import { GridResizeHandle } from './GridResizeHandle.js';
-import { measureGridRowMetrics } from './grid-measure.js';
 import './GridWorkspaceLayout.css';
 
 const OVERLAP_MESSAGE = 'That spot is occupied — choose an empty area.';
+const OUT_OF_BOUNDS_MESSAGE = 'Keep the widget fully inside the workspace.';
 
 export interface GridWorkspaceLayoutProps {
   editMode?: boolean;
@@ -40,6 +42,7 @@ function DraggableGridCell({
   gridColumn,
   gridRow,
   renderWidget,
+  isDragOverlaySource,
 }: {
   item: WidgetLayoutItem;
   editMode: boolean;
@@ -47,8 +50,9 @@ function DraggableGridCell({
   gridColumn: string;
   gridRow: string;
   renderWidget: (item: WidgetLayoutItem) => React.ReactNode;
+  isDragOverlaySource?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: item.instanceId,
     disabled: !editMode,
   });
@@ -56,22 +60,22 @@ function DraggableGridCell({
   const style: React.CSSProperties = {
     gridColumn,
     gridRow,
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    zIndex: isDragging ? 3 : undefined,
     cursor: editMode ? (isDragging ? 'grabbing' : 'grab') : undefined,
-    opacity: isDragging ? 0.85 : 1,
+    visibility: isDragging && !isDragOverlaySource ? 'hidden' : undefined,
   };
 
   return (
     <div
-      ref={setNodeRef}
+      ref={isDragOverlaySource ? undefined : setNodeRef}
       style={style}
       data-wdg-instance-id={item.instanceId}
-      className={`wdg-grid-workspace-layout__cell${editMode ? ' wdg-grid-workspace-layout__cell--edit' : ''}`}
-      {...(editMode ? { ...attributes, ...listeners } : {})}
+      className={`wdg-grid-workspace-layout__cell${editMode ? ' wdg-grid-workspace-layout__cell--edit' : ''}${isDragging && !isDragOverlaySource ? ' wdg-grid-workspace-layout__cell--dragging' : ''}`}
+      {...(editMode && !isDragOverlaySource ? { ...attributes, ...listeners } : {})}
     >
       {renderWidget(item)}
-      {editMode && canResize && <GridResizeHandle instanceId={item.instanceId} edge="east" />}
+      {editMode && canResize && !isDragOverlaySource && (
+        <GridResizeHandle instanceId={item.instanceId} edge="east" />
+      )}
     </div>
   );
 }
@@ -83,7 +87,25 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const gridRef = useRef<HTMLDivElement>(null);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [layoutFeedback, setLayoutFeedback] = useState<string | null>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) {
+      return;
+    }
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (entry) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    setContainerHeight(el.getBoundingClientRect().height);
+    return () => observer.disconnect();
+  }, [workspace?.items]);
 
   const showLayoutFeedback = (message: string) => {
     setLayoutFeedback(message);
@@ -101,13 +123,24 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     [workspace]
   );
 
-  const gridTemplate = useMemo(
-    () =>
-      workspace?.items
-        ? toCssGridTemplate(workspace.items, { ...workspace.layout, ...layout })
-        : null,
+  const layoutConfig = useMemo(
+    () => resolveLayoutConfig({ ...workspace?.layout, ...layout }),
     [workspace, layout]
   );
+
+  const gridTemplate = useMemo(() => {
+    if (!workspace?.items) {
+      return null;
+    }
+    const minRows =
+      editMode && containerHeight > 0
+        ? rowsForContainerHeight(containerHeight, layoutConfig)
+        : undefined;
+    return toCssGridTemplate(workspace.items, layoutConfig, {
+      minRows,
+      rowSizing: editMode ? 'fixed' : 'content',
+    });
+  }, [workspace, layoutConfig, editMode, containerHeight]);
 
   const cellStyle = (instanceId: string) => {
     const cell = gridTemplate?.items.find(i => i.instanceId === instanceId);
@@ -116,7 +149,12 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
       : { gridColumn: '', gridRow: '' };
   };
 
+  const onDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+  };
+
   const onDragEnd = async (event: DragEndEvent) => {
+    setActiveId(null);
     if (!editMode || !permissions.reorder || !gridRef.current || !workspace?.items) {
       return;
     }
@@ -128,27 +166,33 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     }
 
     const containerRect = gridRef.current.getBoundingClientRect();
-    const rowMetrics = measureGridRowMetrics(gridRef.current, String(active.id));
-    const layoutConfig = resolveLayoutConfig({ ...workspace.layout, ...layout });
     const container: GridContainerMetrics = {
       left: containerRect.left,
       top: containerRect.top,
       width: containerRect.width,
       height: containerRect.height,
     };
-    const placement = clampPlacement(
-      placementFromDragDelta(
-        item.grid,
-        event.delta.x,
-        event.delta.y,
-        container,
-        layoutConfig,
-        rowMetrics
-      ),
-      layoutConfig.columns
+    const placement = placementFromDragDelta(
+      item.grid,
+      event.delta.x,
+      event.delta.y,
+      container,
+      layoutConfig
     );
 
-    if (gridPlacementOverlapsOthers(workspace.items, item.instanceId, placement)) {
+    const rejection = evaluateGridMove(
+      workspace.items,
+      item.instanceId,
+      placement,
+      container.width,
+      container.height,
+      layoutConfig
+    );
+    if (rejection === 'out_of_bounds') {
+      showLayoutFeedback(OUT_OF_BOUNDS_MESSAGE);
+      return;
+    }
+    if (rejection === 'overlap') {
       showLayoutFeedback(OVERLAP_MESSAGE);
       return;
     }
@@ -156,12 +200,14 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     await layoutService.moveWidget(item.instanceId, placement);
   };
 
+  const activeItem = activeId ? gridItems.find(i => i.instanceId === activeId) : undefined;
+
   if (!gridTemplate) {
     return null;
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="wdg-grid-workspace-layout-wrapper">
         <div
           ref={gridRef}
@@ -189,6 +235,19 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
             );
           })}
         </div>
+        <DragOverlay dropAnimation={null}>
+          {activeItem ? (
+            <DraggableGridCell
+              item={activeItem}
+              editMode
+              canResize={false}
+              gridColumn=""
+              gridRow=""
+              renderWidget={renderWidget}
+              isDragOverlaySource
+            />
+          ) : null}
+        </DragOverlay>
         {layoutFeedback && (
           <div className="wdg-grid-workspace-layout__feedback" role="status">
             {layoutFeedback}

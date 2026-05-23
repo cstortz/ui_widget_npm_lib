@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   VIEWPORT_4K,
   cellForWidget,
+  dragCellBy,
   dragCellToGridBottom,
   dragCellToGridCorner,
   enterEditMode,
@@ -58,11 +59,24 @@ export function registerNotesCornerDropTests(demoPath: string): void {
       await dragCellToGridBottom(page, 'Notes');
 
       const afterDrop = await readWidgetGridFromState(page, 'demo-notes');
-      expect(afterDrop?.rowStart ?? 0).toBeGreaterThanOrEqual(2);
+      expect(afterDrop?.rowStart ?? 0).toBeGreaterThan(before?.rowStart ?? 0);
 
       await exitEditMode(page);
       const afterEdit = await readWidgetGridFromState(page, 'demo-notes');
       expect(afterEdit).toEqual(afterDrop);
+    });
+
+    test('Notes reverts when dragged past the bottom edge', async ({ page }) => {
+      const before = await readWidgetGridFromState(page, 'demo-notes');
+      const cell = await cellForWidget(page, 'Notes');
+      await dragCellBy(page, cell, 0, 4000);
+
+      const after = await readWidgetGridFromState(page, 'demo-notes');
+      expect(after).toEqual(before);
+      await page
+        .getByRole('status')
+        .filter({ hasText: 'Keep the widget fully inside the workspace' })
+        .waitFor();
     });
   });
 }

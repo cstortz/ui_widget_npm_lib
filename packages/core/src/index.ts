@@ -9,6 +9,8 @@ export type {
   WidgetSystemOptions,
   CssGridItemStyle,
   CssGridTemplate,
+  GridRowSizing,
+  ToCssGridTemplateOptions,
 } from './layout-types.js';
 
 export { DEFAULT_WORKSPACE_LAYOUT } from './layout-types.js';
@@ -19,10 +21,16 @@ export {
   tabbedItems,
   maxGridRow,
   toCssGridTemplate,
+  gridRowStride,
+  rowsForContainerHeight,
   clampPlacement,
   snapResize,
   placementsOverlap,
   gridPlacementOverlapsOthers,
+  evaluateGridMove,
+  isGridPlacementWithinContainer,
+  placementPixelRect,
+  type GridMoveRejection,
   validateLayout,
   collapseToTab,
   restoreFromTab,

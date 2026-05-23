@@ -12,6 +12,8 @@ import {
   snapResize,
   toCssGridTemplate,
   validateLayout,
+  evaluateGridMove,
+  isGridPlacementWithinContainer,
 } from './layout-engine.js';
 import { migrateWorkspaceV1ToV2 } from './migrate-workspace.js';
 import { WidgetRegistry } from './widget-registry.js';
@@ -163,19 +165,22 @@ describe('LayoutEngine', () => {
 
   it('maps vertical drag below tall rows to lower grid rows', () => {
     const original = { colStart: 1, colEnd: 8, rowStart: 1, rowEnd: 2 };
-    const rowMetrics = {
-      rowTops: new Map([
-        [1, 0],
-        [2, 420],
-      ]),
-      rowHeights: new Map([
-        [1, 400],
-        [2, 120],
-      ]),
-    };
     const container = { left: 0, top: 0, width: 1200, height: 2000 };
-    const placement = placementFromDragDelta(original, 0, 900, container, undefined, rowMetrics);
-    assert.ok(placement.rowStart >= 3);
+    const placement = placementFromDragDelta(original, 0, 900, container);
+    assert.ok(placement.rowStart >= 10);
+  });
+
+  it('fills viewport with fixed row tracks in edit mode', () => {
+    const items: WidgetLayoutItem[] = [
+      createLayoutItem('demo-notes', 'ctx', {
+        colStart: 1,
+        colEnd: 7,
+        rowStart: 1,
+        rowEnd: 2,
+      }),
+    ];
+    const css = toCssGridTemplate(items, undefined, { minRows: 20, rowSizing: 'fixed' });
+    assert.match(css.gridTemplateRows, /repeat\(20, 80px\)/);
   });
 
   it('preserves column span when clamping against the grid edge', () => {
@@ -185,6 +190,17 @@ describe('LayoutEngine', () => {
     );
     assert.equal(clamped.colStart, 6);
     assert.equal(clamped.colEnd, 13);
+  });
+
+  it('rejects moves that extend past the workspace container', () => {
+    const a = createLayoutItem('a', null, { colStart: 1, colEnd: 5, rowStart: 1, rowEnd: 2 });
+    const b = createLayoutItem('b', null, { colStart: 5, colEnd: 9, rowStart: 1, rowEnd: 2 });
+    const offScreen = { colStart: 10, colEnd: 14, rowStart: 1, rowEnd: 2 };
+    assert.equal(evaluateGridMove([a, b], a.instanceId, offScreen, 1200, 600), 'out_of_bounds');
+    assert.equal(
+      evaluateGridMove([a, b], a.instanceId, { colStart: 5, colEnd: 9, rowStart: 2, rowEnd: 3 }, 1200, 600),
+      null
+    );
   });
 
   it('detects overlap against other grid items', () => {

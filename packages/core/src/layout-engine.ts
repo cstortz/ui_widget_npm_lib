@@ -3,6 +3,7 @@ import type {
   WidgetLayoutItem,
   WorkspaceLayoutConfig,
   CssGridTemplate,
+  ToCssGridTemplateOptions,
 } from './layout-types.js';
 import { DEFAULT_WORKSPACE_LAYOUT } from './layout-types.js';
 import type { WidgetId } from './types.js';
@@ -40,17 +41,38 @@ export function maxGridRow(items: readonly WidgetLayoutItem[]): number {
   return gridItems(items).reduce((max, item) => Math.max(max, item.grid.rowEnd - 1), 1);
 }
 
+export function gridRowStride(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  return layout.rowHeightPx + layout.gapPx;
+}
+
+export function rowsForContainerHeight(
+  heightPx: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): number {
+  if (heightPx <= 0) {
+    return 1;
+  }
+  return Math.max(1, Math.ceil(heightPx / gridRowStride(layoutConfig)));
+}
+
 export function toCssGridTemplate(
   items: readonly WidgetLayoutItem[],
-  layoutConfig?: Partial<WorkspaceLayoutConfig>
+  layoutConfig?: Partial<WorkspaceLayoutConfig>,
+  options?: ToCssGridTemplateOptions
 ): CssGridTemplate {
   const layout = resolveLayoutConfig(layoutConfig);
   const visible = gridItems(items);
-  const rowCount = Math.max(1, maxGridRow(visible));
+  const rowCount = Math.max(1, maxGridRow(visible), options?.minRows ?? 0);
+  const rowSizing = options?.rowSizing ?? 'content';
+  const rowTrack =
+    rowSizing === 'fixed'
+      ? `${layout.rowHeightPx}px`
+      : `minmax(${layout.rowHeightPx}px, auto)`;
 
   return {
     gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
-    gridTemplateRows: `repeat(${rowCount}, min-content)`,
+    gridTemplateRows: `repeat(${rowCount}, ${rowTrack})`,
     gap: `${layout.gapPx}px`,
     rowCount,
     items: visible.map(item => ({
@@ -226,149 +248,148 @@ export interface GridRowMetrics {
 function pixelOffsetForPlacement(
   placement: GridPlacement,
   containerWidth: number,
-  layout: WorkspaceLayoutConfig,
-  rowMetrics?: GridRowMetrics
+  layout: WorkspaceLayoutConfig
 ): { x: number; y: number } {
+  const gap = layout.gapPx;
+  const columns = layout.columns;
+  const stride = gridRowStride(layout);
+  const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
+  const colStride = trackWidth + gap;
+  const x = (placement.colStart - 1) * colStride;
+  const y = (placement.rowStart - 1) * stride;
+  return { x, y };
+}
+
+function colStartFromRelativeX(
+  relX: number,
+  trackWidth: number,
+  gap: number
+): number {
+  const stride = trackWidth + gap;
+  return Math.floor(relX / stride) + 1;
+}
+
+function rowStartFromRelativeY(relY: number, layout: WorkspaceLayoutConfig): number {
+  const stride = gridRowStride(layout);
+  return Math.floor(relY / stride) + 1;
+}
+
+export function placementPixelRect(
+  placement: GridPlacement,
+  containerWidth: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): { left: number; top: number; width: number; height: number } {
+  const layout = resolveLayoutConfig(layoutConfig);
   const gap = layout.gapPx;
   const columns = layout.columns;
   const rowHeight = layout.rowHeightPx;
   const trackWidth = (containerWidth - gap * (columns - 1)) / columns;
   const colStride = trackWidth + gap;
-  const x = (placement.colStart - 1) * colStride;
+  const rowStride = gridRowStride(layout);
+  const colSpan = placement.colEnd - placement.colStart;
+  const rowSpan = placement.rowEnd - placement.rowStart;
 
-  const measuredTop = rowMetrics?.rowTops.get(placement.rowStart);
-  const y =
-    measuredTop ?? (placement.rowStart - 1) * (rowHeight + gap);
+  const left = (placement.colStart - 1) * colStride;
+  const top = (placement.rowStart - 1) * rowStride;
+  const width = colSpan * trackWidth + Math.max(0, colSpan - 1) * gap;
+  const height = rowSpan * rowHeight + Math.max(0, rowSpan - 1) * gap;
 
-  return { x, y };
+  return { left, top, width, height };
 }
 
-function averageRowStride(
-  rowMetrics: GridRowMetrics | undefined,
-  rowHeight: number,
-  gap: number
-): number {
-  if (!rowMetrics || rowMetrics.rowTops.size === 0) {
-    return rowHeight + gap;
+/** True when the full widget footprint fits inside the workspace container */
+export function isGridPlacementWithinContainer(
+  placement: GridPlacement,
+  containerWidth: number,
+  containerHeight: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): boolean {
+  const layout = resolveLayoutConfig(layoutConfig);
+  if (placement.colStart < 1 || placement.colEnd > layout.columns + 1 || placement.rowStart < 1) {
+    return false;
   }
-  const rows = [...rowMetrics.rowTops.keys()].sort((a, b) => a - b);
-  if (rows.length >= 2) {
-    const strides: number[] = [];
-    for (let i = 1; i < rows.length; i++) {
-      const prevTop = rowMetrics.rowTops.get(rows[i - 1]) ?? 0;
-      const nextTop = rowMetrics.rowTops.get(rows[i]) ?? prevTop;
-      strides.push(Math.max(rowHeight + gap, nextTop - prevTop));
-    }
-    return strides.reduce((sum, stride) => sum + stride, 0) / strides.length;
-  }
-  const height = rowMetrics.rowHeights.get(rows[0]) ?? rowHeight;
-  return height + gap;
+
+  const { left, top, width, height } = placementPixelRect(placement, containerWidth, layoutConfig);
+  const epsilon = 0.5;
+  return (
+    left >= -epsilon &&
+    top >= -epsilon &&
+    left + width <= containerWidth + epsilon &&
+    top + height <= containerHeight + epsilon
+  );
 }
 
-function colStartFromRelativeX(
-  relX: number,
-  columns: number,
-  colSpan: number,
-  trackWidth: number,
-  gap: number
-): number {
-  const stride = trackWidth + gap;
-  let colStart = 1;
-  for (let c = 1; c <= columns - colSpan + 1; c++) {
-    const colLeft = (c - 1) * stride;
-    if (relX + 1 >= colLeft) {
-      colStart = c;
-    }
+export type GridMoveRejection = 'out_of_bounds' | 'overlap';
+
+/** Returns null when the move is allowed; otherwise why it must revert to the original spot */
+export function evaluateGridMove(
+  items: readonly WidgetLayoutItem[],
+  instanceId: string,
+  placement: GridPlacement,
+  containerWidth: number,
+  containerHeight: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): GridMoveRejection | null {
+  if (!isGridPlacementWithinContainer(placement, containerWidth, containerHeight, layoutConfig)) {
+    return 'out_of_bounds';
   }
-  return Math.max(1, Math.min(colStart, columns - colSpan + 1));
+  if (gridPlacementOverlapsOthers(items, instanceId, placement)) {
+    return 'overlap';
+  }
+  return null;
 }
 
-function rowStartFromRelativeY(
-  relY: number,
-  rowSpan: number,
-  rowHeight: number,
-  gap: number,
-  rowMetrics?: GridRowMetrics
-): number {
-  if (!rowMetrics || rowMetrics.rowTops.size === 0) {
-    return Math.max(1, Math.floor(relY / (rowHeight + gap)) + 1);
-  }
-
-  const rows = [...rowMetrics.rowTops.keys()].sort((a, b) => a - b);
-  for (const row of rows) {
-    const top = rowMetrics.rowTops.get(row) ?? 0;
-    const height = rowMetrics.rowHeights.get(row) ?? rowHeight;
-    if (relY >= top && relY < top + height) {
-      return row;
-    }
-  }
-
-  const lastRow = rows[rows.length - 1] ?? 1;
-  const lastTop = rowMetrics.rowTops.get(lastRow) ?? 0;
-  const lastHeight = rowMetrics.rowHeights.get(lastRow) ?? rowHeight;
-  const below = relY - (lastTop + lastHeight + gap);
-  if (below >= 0) {
-    const stride = averageRowStride(rowMetrics, rowHeight, gap);
-    return lastRow + 1 + Math.floor(below / stride);
-  }
-
-  return 1;
-}
-
-/** Snap placement by applying pixel drag delta to the widget's original grid position */
+/** Map drag delta to a grid placement without clamping or edge correction */
 export function placementFromDragDelta(
   original: GridPlacement,
   deltaX: number,
   deltaY: number,
   container: GridContainerMetrics,
   layoutConfig?: Partial<WorkspaceLayoutConfig>,
-  rowMetrics?: GridRowMetrics
+  /** @deprecated ignored — uniform row stride is used for stable snap */
+  _rowMetrics?: GridRowMetrics
 ): GridPlacement {
   const layout = resolveLayoutConfig(layoutConfig);
-  const origin = pixelOffsetForPlacement(original, container.width, layout, rowMetrics);
+  const origin = pixelOffsetForPlacement(original, container.width, layout);
 
   return placementFromTopLeft(
     container.left + origin.x + deltaX,
     container.top + origin.y + deltaY,
     container,
     original,
-    layoutConfig,
-    rowMetrics
+    layoutConfig
   );
 }
 
-/** Snap a widget's top-left corner to the nearest grid placement (preserves span) */
+/** Map a top-left pixel position to grid coordinates (preserves span, no clamping) */
 export function placementFromTopLeft(
   topLeftX: number,
   topLeftY: number,
   container: GridContainerMetrics,
   current: GridPlacement,
   layoutConfig?: Partial<WorkspaceLayoutConfig>,
-  rowMetrics?: GridRowMetrics
+  /** @deprecated ignored — uniform row stride is used for stable snap */
+  _rowMetrics?: GridRowMetrics
 ): GridPlacement {
   const layout = resolveLayoutConfig(layoutConfig);
   const columns = layout.columns;
   const gap = layout.gapPx;
-  const rowHeight = layout.rowHeightPx;
   const colSpan = current.colEnd - current.colStart;
   const rowSpan = current.rowEnd - current.rowStart;
 
-  const relX = Math.max(0, Math.min(topLeftX - container.left, container.width));
-  const relY = Math.max(0, topLeftY - container.top);
+  const relX = topLeftX - container.left;
+  const relY = topLeftY - container.top;
 
   const trackWidth = (container.width - gap * (columns - 1)) / columns;
-  const colStart = colStartFromRelativeX(relX, columns, colSpan, trackWidth, gap);
-  const rowStart = rowStartFromRelativeY(relY, rowSpan, rowHeight, gap, rowMetrics);
+  const colStart = colStartFromRelativeX(relX, trackWidth, gap);
+  const rowStart = rowStartFromRelativeY(relY, layout);
 
-  return clampPlacement(
-    {
-      colStart,
-      colEnd: colStart + colSpan,
-      rowStart,
-      rowEnd: rowStart + rowSpan,
-    },
-    columns
-  );
+  return {
+    colStart,
+    colEnd: colStart + colSpan,
+    rowStart,
+    rowEnd: rowStart + rowSpan,
+  };
 }
 
 /** @deprecated Use placementFromTopLeft — argument order is the same (top-left, not pointer hotspot) */
@@ -387,16 +408,14 @@ export function moveItemOnGrid(
   items: readonly WidgetLayoutItem[],
   instanceId: string,
   target: GridPlacement,
-  layoutConfig?: Partial<WorkspaceLayoutConfig>
+  _layoutConfig?: Partial<WorkspaceLayoutConfig>
 ): WidgetLayoutItem[] {
-  const layout = resolveLayoutConfig(layoutConfig);
   const source = items.find(i => i.instanceId === instanceId);
   if (!source || source.mode !== 'grid') {
     return [...items];
   }
 
-  const clamped = clampPlacement(target, layout.columns);
-  return items.map(i => (i.instanceId === instanceId ? { ...i, grid: clamped } : i));
+  return items.map(i => (i.instanceId === instanceId ? { ...i, grid: target } : i));
 }
 
 export function findNextGridSlot(

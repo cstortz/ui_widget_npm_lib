@@ -84,7 +84,7 @@ export async function dragCellBy(
   await page.mouse.up();
 }
 
-/** Drag a widget toward the bottom inside the grid workspace bounds */
+/** Drag a widget toward the bottom while keeping it fully inside the workspace */
 export async function dragCellToGridBottom(page: Page, title: string): Promise<void> {
   const grid = page.getByTestId('grid-workspace');
   const gridBox = await grid.boundingBox();
@@ -93,27 +93,45 @@ export async function dragCellToGridBottom(page: Page, title: string): Promise<v
   if (!gridBox || !cellBox) {
     throw new Error('Grid workspace or cell has no bounding box');
   }
-  const deltaY = gridBox.y + gridBox.height - 48 - (cellBox.y + 24);
-  await dragCellBy(page, cell, 0, Math.max(deltaY, 200));
+
+  const grabOffsetY = 24;
+  const maxTopLeftY = gridBox.y + gridBox.height - cellBox.height - 8;
+  const targetGrabY = maxTopLeftY + grabOffsetY;
+  const startY = cellBox.y + grabOffsetY;
+  const deltaY = targetGrabY - startY;
+
+  await dragCellBy(page, cell, 0, Math.max(deltaY, rowStrideForDrag()));
+}
+
+function rowStrideForDrag(): number {
+  return 88;
 }
 
 export async function dragCellToGridCorner(
   page: Page,
   title: string,
-  widgetId: string,
+  _widgetId: string,
   corner: GridCorner
 ): Promise<void> {
   const target = expectedNotesCornerPlacement(corner);
-  const current = await readWidgetGridFromState(page, widgetId);
-  if (!current) {
-    throw new Error(`Widget ${widgetId} is not on the grid`);
+  const grid = page.getByTestId('grid-workspace');
+  const gridBox = await grid.boundingBox();
+  const cell = await cellForWidget(page, title);
+  const cellBox = await cell.boundingBox();
+  if (!gridBox || !cellBox) {
+    throw new Error('Grid workspace or cell has no bounding box');
   }
 
   const { colStride, rowStride } = await readGridDragStrides(page);
-  const deltaX = (target.colStart - current.colStart) * colStride;
-  const deltaY = (target.rowStart - current.rowStart) * rowStride;
+  const targetX = gridBox.x + (target.colStart - 0.5) * colStride + 24;
+  const targetY = gridBox.y + (target.rowStart - 0.5) * rowStride + 24;
+  const startX = cellBox.x + 24;
+  const startY = cellBox.y + 24;
 
-  await dragCellBy(page, await cellForWidget(page, title), deltaX, deltaY);
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(targetX, targetY, { steps: 12 });
+  await page.mouse.up();
 }
 
 export async function readGridDragStrides(
@@ -129,27 +147,7 @@ export async function readGridDragStrides(
     const columns = 12;
     const trackWidth = (rect.width - gap * (columns - 1)) / columns;
     const colStride = trackWidth + gap;
-
-    let rowStride = 88;
-    const cells = [...grid.querySelectorAll('.wdg-grid-workspace-layout__cell, .wdg-grid-cell')];
-    const rowTops = cells
-      .map(cell => {
-        const style = getComputedStyle(cell);
-        const row = parseInt(style.gridRowStart, 10);
-        if (Number.isNaN(row)) {
-          return null;
-        }
-        return { row, top: cell.getBoundingClientRect().top };
-      })
-      .filter((entry): entry is { row: number; top: number } => entry !== null);
-
-    const uniqueRows = [...new Set(rowTops.map(entry => entry.row))].sort((a, b) => a - b);
-    if (uniqueRows.length >= 2) {
-      const firstTop = rowTops.find(entry => entry.row === uniqueRows[0])!.top;
-      const secondTop = rowTops.find(entry => entry.row === uniqueRows[1])!.top;
-      rowStride = Math.max(rowStride, secondTop - firstTop);
-    }
-
+    const rowStride = 88;
     return { colStride, rowStride };
   });
 }

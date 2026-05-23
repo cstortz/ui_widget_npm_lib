@@ -1,7 +1,9 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ContentChild,
+  DestroyRef,
   ElementRef,
   Input,
   TemplateRef,
@@ -16,16 +18,15 @@ import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
-  clampPlacement,
-  gridPlacementOverlapsOthers,
+  evaluateGridMove,
   placementFromDragDelta,
   resolveLayoutConfig,
+  rowsForContainerHeight,
   toCssGridTemplate,
   type GridContainerMetrics,
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
 import { GridCellComponent } from './grid-cell.component';
-import { measureGridRowMetrics } from './grid-measure';
 import { WidgetBodyDirective, type WidgetBodyContext } from '../widget-body.directive';
 import { GridResizeHandleDirective } from '../grid-resize-handle/grid-resize-handle.directive';
 import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
@@ -63,6 +64,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
           class="wdg-grid-workspace-layout__cell"
           [class.wdg-grid-workspace-layout__cell--edit]="editMode"
         >
+          <div *cdkDragPlaceholder class="wdg-grid-workspace-layout__drag-placeholder"></div>
           @if (bodyTemplate) {
             <ng-container
               *ngTemplateOutlet="
@@ -127,6 +129,12 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         z-index: 3;
       }
 
+      .wdg-grid-workspace-layout__drag-placeholder {
+        width: 100%;
+        min-height: 80px;
+        visibility: hidden;
+      }
+
       .cdk-drag-preview {
         box-sizing: border-box;
         opacity: 0.85;
@@ -153,8 +161,9 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
     `,
   ],
 })
-export class GridWorkspaceLayoutComponent {
+export class GridWorkspaceLayoutComponent implements AfterViewInit {
   private static readonly OVERLAP_MESSAGE = 'That spot is occupied — choose an empty area.';
+  private static readonly OUT_OF_BOUNDS_MESSAGE = 'Keep the widget fully inside the workspace.';
 
   @Input() editMode = false;
   @Input() widgetBodyTemplate?: TemplateRef<WidgetBodyContext>;
@@ -164,9 +173,12 @@ export class GridWorkspaceLayoutComponent {
   protected readonly permissions = inject(LAYOUT_PERMISSIONS);
   private readonly layoutService = inject(WorkspaceLayoutService);
   private readonly layoutDefaults = inject(WORKSPACE_LAYOUT_CONFIG);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly layoutFeedback = signal<string | null>(null);
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly containerHeight = signal(0);
+  private resizeObserver?: ResizeObserver;
 
   private readonly workspace = toSignal(this.layoutService.workspace$, { initialValue: null });
 
@@ -183,8 +195,31 @@ export class GridWorkspaceLayoutComponent {
     if (!ws?.items) {
       return null;
     }
-    return toCssGridTemplate(ws.items, { ...ws.layout, ...this.layoutDefaults });
+    const layoutConfig = resolveLayoutConfig({ ...ws.layout, ...this.layoutDefaults });
+    const height = this.containerHeight();
+    const minRows =
+      this.editMode && height > 0 ? rowsForContainerHeight(height, layoutConfig) : undefined;
+    return toCssGridTemplate(ws.items, layoutConfig, {
+      minRows,
+      rowSizing: this.editMode ? 'fixed' : 'content',
+    });
   });
+
+  ngAfterViewInit(): void {
+    const el = this.gridContainer?.nativeElement;
+    if (!el || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    this.resizeObserver = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (entry) {
+        this.containerHeight.set(entry.contentRect.height);
+      }
+    });
+    this.resizeObserver.observe(el);
+    this.containerHeight.set(el.getBoundingClientRect().height);
+    this.destroyRef.onDestroy(() => this.resizeObserver?.disconnect());
+  }
 
   protected layoutColumns(): number {
     return this.gridTemplate() ? 12 : 12;
@@ -208,7 +243,6 @@ export class GridWorkspaceLayoutComponent {
     const containerRect = containerEl.getBoundingClientRect();
     const ws = this.workspace();
     const layout = resolveLayoutConfig({ ...ws?.layout, ...this.layoutDefaults });
-    const rowMetrics = measureGridRowMetrics(containerEl, item.instanceId);
 
     const container: GridContainerMetrics = {
       left: containerRect.left,
@@ -217,22 +251,34 @@ export class GridWorkspaceLayoutComponent {
       height: containerRect.height,
     };
 
-    const placement = clampPlacement(
-      placementFromDragDelta(
-        item.grid,
-        event.distance.x,
-        event.distance.y,
-        container,
-        layout,
-        rowMetrics
-      ),
-      layout.columns
+    const placement = placementFromDragDelta(
+      item.grid,
+      event.distance.x,
+      event.distance.y,
+      container,
+      layout
     );
 
     event.source.reset();
 
-    if (!ws?.items || gridPlacementOverlapsOthers(ws.items, item.instanceId, placement)) {
+    const rejection = evaluateGridMove(
+      ws?.items ?? [],
+      item.instanceId,
+      placement,
+      container.width,
+      container.height,
+      layout
+    );
+    if (rejection === 'out_of_bounds') {
+      this.showLayoutFeedback(GridWorkspaceLayoutComponent.OUT_OF_BOUNDS_MESSAGE);
+      return;
+    }
+    if (rejection === 'overlap') {
       this.showLayoutFeedback(GridWorkspaceLayoutComponent.OVERLAP_MESSAGE);
+      return;
+    }
+
+    if (!ws?.items) {
       return;
     }
 
