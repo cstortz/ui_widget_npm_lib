@@ -12,6 +12,7 @@ import {
   host: {
     '[style.gridColumn]': 'gridColumn',
     '[style.gridRow]': 'gridRow',
+    '[attr.data-wdg-instance-id]': 'instanceId',
     class: 'wdg-grid-cell',
   },
   styles: [

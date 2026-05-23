@@ -191,13 +191,69 @@ export interface GridContainerMetrics {
   height: number;
 }
 
-/** Map a pointer position within the grid container to a snapped placement (preserves span) */
-export function placementFromPointer(
-  clientX: number,
-  clientY: number,
+/** Measured row positions within the grid container (1-based row indices) */
+export interface GridRowMetrics {
+  rowTops: ReadonlyMap<number, number>;
+  rowHeights: ReadonlyMap<number, number>;
+}
+
+function colStartFromRelativeX(
+  relX: number,
+  columns: number,
+  colSpan: number,
+  trackWidth: number,
+  gap: number
+): number {
+  const stride = trackWidth + gap;
+  let colStart = 1;
+  for (let c = 1; c <= columns - colSpan + 1; c++) {
+    const colLeft = (c - 1) * stride;
+    if (relX + 1 >= colLeft) {
+      colStart = c;
+    }
+  }
+  return Math.max(1, Math.min(colStart, columns - colSpan + 1));
+}
+
+function rowStartFromRelativeY(
+  relY: number,
+  rowSpan: number,
+  rowHeight: number,
+  gap: number,
+  rowMetrics?: GridRowMetrics
+): number {
+  if (!rowMetrics || rowMetrics.rowTops.size === 0) {
+    return Math.max(1, Math.floor(relY / (rowHeight + gap)) + 1);
+  }
+
+  const rows = [...rowMetrics.rowTops.keys()].sort((a, b) => a - b);
+  for (const row of rows) {
+    const top = rowMetrics.rowTops.get(row) ?? 0;
+    const height = rowMetrics.rowHeights.get(row) ?? rowHeight;
+    if (relY >= top && relY < top + height) {
+      return row;
+    }
+  }
+
+  const lastRow = rows[rows.length - 1] ?? 1;
+  const lastTop = rowMetrics.rowTops.get(lastRow) ?? 0;
+  const lastHeight = rowMetrics.rowHeights.get(lastRow) ?? rowHeight;
+  const below = relY - (lastTop + lastHeight + gap);
+  if (below >= 0) {
+    return lastRow + 1 + Math.floor(below / (rowHeight + gap));
+  }
+
+  return 1;
+}
+
+/** Snap a widget's top-left corner to the nearest grid placement (preserves span) */
+export function placementFromTopLeft(
+  topLeftX: number,
+  topLeftY: number,
   container: GridContainerMetrics,
   current: GridPlacement,
-  layoutConfig?: Partial<WorkspaceLayoutConfig>
+  layoutConfig?: Partial<WorkspaceLayoutConfig>,
+  rowMetrics?: GridRowMetrics
 ): GridPlacement {
   const layout = resolveLayoutConfig(layoutConfig);
   const columns = layout.columns;
@@ -206,25 +262,12 @@ export function placementFromPointer(
   const colSpan = current.colEnd - current.colStart;
   const rowSpan = current.rowEnd - current.rowStart;
 
-  const relX = Math.max(0, Math.min(clientX - container.left, container.width));
-  const relY = Math.max(0, clientY - container.top);
+  const relX = Math.max(0, Math.min(topLeftX - container.left, container.width));
+  const relY = Math.max(0, topLeftY - container.top);
 
   const trackWidth = (container.width - gap * (columns - 1)) / columns;
-
-  let colIndex = 1;
-  let x = 0;
-  for (let c = 1; c <= columns; c++) {
-    const trackEnd = x + trackWidth;
-    if (relX <= trackEnd || c === columns) {
-      colIndex = c;
-      break;
-    }
-    x = trackEnd + gap;
-  }
-
-  const colStart = Math.max(1, Math.min(colIndex, columns - colSpan + 1));
-  const rowStride = rowHeight + gap;
-  const rowStart = Math.max(1, Math.floor(relY / rowStride) + 1);
+  const colStart = colStartFromRelativeX(relX, columns, colSpan, trackWidth, gap);
+  const rowStart = rowStartFromRelativeY(relY, rowSpan, rowHeight, gap, rowMetrics);
 
   return clampPlacement(
     {
@@ -237,7 +280,18 @@ export function placementFromPointer(
   );
 }
 
-/** Move a grid item; swaps placement with any overlapping widget */
+/** @deprecated Use placementFromTopLeft — argument order is the same (top-left, not pointer hotspot) */
+export function placementFromPointer(
+  clientX: number,
+  clientY: number,
+  container: GridContainerMetrics,
+  current: GridPlacement,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): GridPlacement {
+  return placementFromTopLeft(clientX, clientY, container, current, layoutConfig);
+}
+
+/** Move a grid item without changing any other widget's placement */
 export function moveItemOnGrid(
   items: readonly WidgetLayoutItem[],
   instanceId: string,
@@ -251,22 +305,6 @@ export function moveItemOnGrid(
   }
 
   const clamped = clampPlacement(target, layout.columns);
-  const others = gridItems(items).filter(i => i.instanceId !== instanceId);
-  const overlapping = others.find(o => placementsOverlap(o.grid, clamped));
-
-  if (overlapping) {
-    const sourceGrid = { ...source.grid };
-    return items.map(i => {
-      if (i.instanceId === instanceId) {
-        return { ...i, grid: clamped };
-      }
-      if (i.instanceId === overlapping.instanceId) {
-        return { ...i, grid: sourceGrid };
-      }
-      return i;
-    });
-  }
-
   return items.map(i => (i.instanceId === instanceId ? { ...i, grid: clamped } : i));
 }
 

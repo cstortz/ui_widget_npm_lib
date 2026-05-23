@@ -10,7 +10,7 @@ import {
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
-  placementFromPointer,
+  placementFromTopLeft,
   toCssGridTemplate,
 } from '@ncs_software/widget-system';
 import {
@@ -19,6 +19,7 @@ import {
   useWorkspaceLayoutService,
 } from '../widget-state-context.js';
 import { GridResizeHandle } from './GridResizeHandle.js';
+import { measureGridRowMetrics } from './grid-measure.js';
 import './GridWorkspaceLayout.css';
 
 export interface GridWorkspaceLayoutProps {
@@ -59,6 +60,7 @@ function DraggableGridCell({
     <div
       ref={setNodeRef}
       style={style}
+      data-wdg-instance-id={item.instanceId}
       className={`wdg-grid-workspace-layout__cell${editMode ? ' wdg-grid-workspace-layout__cell--edit' : ''}`}
       {...(editMode ? { ...attributes, ...listeners } : {})}
     >
@@ -108,14 +110,14 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     }
 
     const container = gridRef.current.getBoundingClientRect();
-    const centerX = translated.left + translated.width / 2;
-    const centerY = translated.top + translated.height / 2;
-    const placement = placementFromPointer(
-      centerX,
-      centerY,
+    const rowMetrics = measureGridRowMetrics(gridRef.current, String(active.id));
+    const placement = placementFromTopLeft(
+      translated.left,
+      translated.top,
       container,
       item.grid,
-      { ...workspace.layout, ...layout }
+      { ...workspace.layout, ...layout },
+      rowMetrics
     );
 
     await layoutService.moveWidget(item.instanceId, placement);

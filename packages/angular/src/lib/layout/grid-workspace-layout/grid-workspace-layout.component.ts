@@ -15,11 +15,12 @@ import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
-  placementFromPointer,
+  placementFromTopLeft,
   toCssGridTemplate,
 } from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
 import { GridCellComponent } from './grid-cell.component';
+import { measureGridRowMetrics } from './grid-measure';
 import { WidgetBodyDirective, type WidgetBodyContext } from '../widget-body.directive';
 import { GridResizeHandleDirective } from '../grid-resize-handle/grid-resize-handle.directive';
 import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
@@ -169,24 +170,24 @@ export class GridWorkspaceLayoutComponent {
       return;
     }
 
-    const pointer = event.event instanceof MouseEvent
-      ? event.event
-      : (event.event as TouchEvent).changedTouches?.[0];
-    if (!pointer) {
-      return;
-    }
-
+    const root = event.source.getRootElement() as HTMLElement;
+    const elRect = root.getBoundingClientRect();
+    const containerEl = this.gridContainer.nativeElement;
+    const containerRect = containerEl.getBoundingClientRect();
     const ws = this.workspace();
     const layout = { ...ws?.layout, ...this.layoutDefaults };
-    const rect = this.gridContainer.nativeElement.getBoundingClientRect();
-    const placement = placementFromPointer(
-      pointer.clientX,
-      pointer.clientY,
-      rect,
+    const rowMetrics = measureGridRowMetrics(containerEl, item.instanceId);
+
+    const placement = placementFromTopLeft(
+      elRect.left,
+      elRect.top,
+      containerRect,
       item.grid,
-      layout
+      layout,
+      rowMetrics
     );
 
+    event.source.reset();
     this.layoutService.moveWidget(item.instanceId, placement).subscribe();
   }
 }
