@@ -1,5 +1,11 @@
 # @ncs_software/widget-system-react
 
+## 1.2.1
+
+### Patch Changes
+
+- 0113907: Add vitest component tests, controlled collapsed prop on WidgetPanel, and getting-started docs.
+
 ## 1.2.0
 
 ### Minor Changes
