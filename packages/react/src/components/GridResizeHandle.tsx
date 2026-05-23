@@ -1,6 +1,7 @@
 import { useCallback, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import './GridResizeHandle.css';
-import { useWorkspaceLayoutService } from '../widget-state-context.js';
+import { columnStridePx, resolveLayoutConfig } from '@ncs_software/widget-system';
+import { useLayoutConfig, useWorkspaceLayoutService } from '../widget-state-context.js';
 
 export interface GridResizeHandleProps {
   instanceId: string;
@@ -14,10 +15,11 @@ export function GridResizeHandle({
   onResizeComplete,
 }: GridResizeHandleProps) {
   const layoutService = useWorkspaceLayoutService();
+  const { layout } = useLayoutConfig();
+  const columnStride = columnStridePx(resolveLayoutConfig(layout));
   const dragging = useRef(false);
   const startX = useRef(0);
   const accumulatedColumns = useRef(0);
-  const columnWidthPx = 80;
 
   const onPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -35,13 +37,13 @@ export function GridResizeHandle({
       }
       const deltaPx = event.clientX - startX.current;
       const columnDelta =
-        Math.round(deltaPx / columnWidthPx) - accumulatedColumns.current;
+        Math.round(deltaPx / columnStride) - accumulatedColumns.current;
       if (columnDelta !== 0) {
         accumulatedColumns.current += columnDelta;
         void layoutService.resizeWidget(instanceId, columnDelta, edge);
       }
     },
-    [layoutService, instanceId, edge]
+    [layoutService, instanceId, edge, columnStride]
   );
 
   const onPointerUp = useCallback(() => {

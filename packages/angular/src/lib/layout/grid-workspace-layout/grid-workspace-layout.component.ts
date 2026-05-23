@@ -19,8 +19,8 @@ import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
-  gridContentWidth,
   columnWidthPx,
+  layoutConfigForContainerWidth,
   placementFromDragDelta,
   resolveLayoutConfig,
   rowsForContainerHeight,
@@ -55,7 +55,8 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         [style.gridTemplateColumns]="gridTemplate()?.gridTemplateColumns"
         [style.gridTemplateRows]="gridTemplate()?.gridTemplateRows"
         [style.gap]="gridTemplate()?.gap"
-        [style.width.px]="gridWidthPx()"
+        [style.width]="'100%'"
+        [attr.data-grid-columns]="gridTemplate()?.columnCount"
         [style.--wdg-grid-col-width.px]="columnWidthPx()"
         [style.--wdg-grid-gap.px]="layoutGapPx()"
       >
@@ -108,6 +109,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
       .wdg-grid-workspace-layout {
         height: auto;
         min-height: 100%;
+        width: 100%;
         box-sizing: border-box;
         position: relative;
         align-content: start;
@@ -192,10 +194,23 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
 
   protected readonly layoutFeedback = signal<string | null>(null);
   private feedbackTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly containerHeight = signal(0);
+  private readonly containerSize = signal({ width: 0, height: 0 });
   private resizeObserver?: ResizeObserver;
 
   private readonly workspace = toSignal(this.layoutService.workspace$, { initialValue: null });
+
+  protected readonly baseLayoutConfig = computed(() => {
+    const ws = this.workspace();
+    return resolveLayoutConfig({ ...ws?.layout, ...this.layoutDefaults });
+  });
+
+  protected readonly activeLayoutConfig = computed(() => {
+    const width = this.containerSize().width;
+    if (width <= 0) {
+      return this.baseLayoutConfig();
+    }
+    return layoutConfigForContainerWidth(width, this.baseLayoutConfig());
+  });
 
   protected readonly gridItems = computed(() => {
     const ws = this.workspace();
@@ -210,33 +225,22 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
     if (!ws?.items) {
       return null;
     }
-    const layoutConfig = resolveLayoutConfig({ ...ws.layout, ...this.layoutDefaults });
-    const height = this.containerHeight();
+    const layoutConfig = this.activeLayoutConfig();
+    const height = this.containerSize().height;
     const minRows =
       this.editMode && height > 0 ? rowsForContainerHeight(height, layoutConfig) : undefined;
     return toCssGridTemplate(ws.items, layoutConfig, {
       minRows,
+      columnCount: layoutConfig.columns,
     });
   });
 
-  protected gridWidthPx(): number {
-    const ws = this.workspace();
-    if (!ws?.items) {
-      return gridContentWidth(this.layoutDefaults);
-    }
-    return gridContentWidth({ ...ws.layout, ...this.layoutDefaults });
-  }
-
   protected columnWidthPx(): number {
-    const ws = this.workspace();
-    if (!ws?.items) {
-      return columnWidthPx(this.layoutDefaults);
-    }
-    return columnWidthPx({ ...ws.layout, ...this.layoutDefaults });
+    return columnWidthPx(this.activeLayoutConfig());
   }
 
   protected layoutGapPx(): number {
-    return resolveLayoutConfig(this.layoutDefaults).gapPx;
+    return this.activeLayoutConfig().gapPx;
   }
 
   ngAfterViewInit(): void {
@@ -247,11 +251,15 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
     this.resizeObserver = new ResizeObserver(entries => {
       const entry = entries[0];
       if (entry) {
-        this.containerHeight.set(entry.contentRect.height);
+        this.containerSize.set({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
       }
     });
     this.resizeObserver.observe(el);
-    this.containerHeight.set(el.getBoundingClientRect().height);
+    const rect = el.getBoundingClientRect();
+    this.containerSize.set({ width: rect.width, height: rect.height });
     this.destroyRef.onDestroy(() => this.resizeObserver?.disconnect());
   }
 
@@ -273,13 +281,13 @@ export class GridWorkspaceLayoutComponent implements AfterViewInit {
     const gridRect = containerEl.getBoundingClientRect();
     const viewportRect = this.gridWrapper?.nativeElement.getBoundingClientRect() ?? gridRect;
     const ws = this.workspace();
-    const layout = resolveLayoutConfig({ ...ws?.layout, ...this.layoutDefaults });
+    const layout = this.activeLayoutConfig();
 
     const container: GridContainerMetrics = {
       left: gridRect.left,
       top: gridRect.top,
-      width: gridRect.width,
-      height: viewportRect.height,
+      width: this.containerSize().width > 0 ? this.containerSize().width : gridRect.width,
+      height: this.containerSize().height > 0 ? this.containerSize().height : viewportRect.height,
     };
 
     const placement = placementFromDragDelta(

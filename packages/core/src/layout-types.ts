@@ -35,7 +35,9 @@ export interface WorkspaceLayoutConfig {
   columns: number;
   rowHeightPx: number;
   gapPx: number;
-  /** Total grid width in px (columns × track width + gaps). Widgets do not shrink/grow with viewport. */
+  /** Fixed column track width in px (~92.67 at 12 cols / 1200px reference width) */
+  columnWidthPx?: number;
+  /** @deprecated use columnWidthPx; reference width for deriving default column width */
   gridWidthPx?: number;
   tabBar: WorkspaceTabBarConfig;
 }
@@ -44,6 +46,7 @@ export const DEFAULT_WORKSPACE_LAYOUT: WorkspaceLayoutConfig = {
   columns: 12,
   rowHeightPx: 80,
   gapPx: 8,
+  columnWidthPx: (1200 - 11 * 8) / 12,
   gridWidthPx: 1200,
   tabBar: { enabled: true, maxVisible: 10 },
 };
@@ -74,6 +77,7 @@ export interface CssGridTemplate {
   gap: string;
   items: CssGridItemStyle[];
   rowCount: number;
+  columnCount: number;
 }
 
 /** How grid row tracks are sized in the CSS template */
@@ -84,4 +88,6 @@ export interface ToCssGridTemplateOptions {
   minRows?: number;
   /** fixed = uniform rowHeightPx tracks; content = min-content rows */
   rowSizing?: GridRowSizing;
+  /** Live column count from viewport width (defaults to layout.columns) */
+  columnCount?: number;
 }

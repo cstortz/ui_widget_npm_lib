@@ -7,7 +7,12 @@ import {
   Output,
   inject,
 } from '@angular/core';
+import {
+  columnStridePx,
+  resolveLayoutConfig,
+} from '@ncs_software/widget-system';
 import { WorkspaceLayoutService } from '../../services/workspace-layout.service';
+import { WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
 
 @Directive({
   selector: '[wdgGridResizeHandle]',
@@ -52,10 +57,14 @@ export class GridResizeHandleDirective {
   }
 
   private readonly layoutService = inject(WorkspaceLayoutService);
+  private readonly layoutDefaults = inject(WORKSPACE_LAYOUT_CONFIG);
   private dragging = false;
   private startX = 0;
   private accumulatedColumns = 0;
-  private readonly columnWidthPx = 80;
+
+  private get columnStride(): number {
+    return columnStridePx(resolveLayoutConfig(this.layoutDefaults));
+  }
 
   @HostListener('pointerdown', ['$event'])
   onPointerDown(event: PointerEvent): void {
@@ -73,7 +82,7 @@ export class GridResizeHandleDirective {
       return;
     }
     const deltaPx = event.clientX - this.startX;
-    const columnDelta = Math.round(deltaPx / this.columnWidthPx) - this.accumulatedColumns;
+    const columnDelta = Math.round(deltaPx / this.columnStride) - this.accumulatedColumns;
     if (columnDelta !== 0) {
       this.accumulatedColumns += columnDelta;
       this.layoutService

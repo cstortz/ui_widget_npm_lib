@@ -58,13 +58,59 @@ export function rowsForContainerHeight(
 
 export function columnWidthPx(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
   const layout = resolveLayoutConfig(layoutConfig);
-  const gridWidth = gridContentWidth(layout);
+  if (layout.columnWidthPx !== undefined) {
+    return layout.columnWidthPx;
+  }
+  const gridWidth = layout.gridWidthPx ?? 1200;
   return (gridWidth - layout.gapPx * (layout.columns - 1)) / layout.columns;
 }
 
-export function gridContentWidth(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
+export function columnStridePx(layoutConfig?: Partial<WorkspaceLayoutConfig>): number {
   const layout = resolveLayoutConfig(layoutConfig);
-  return layout.gridWidthPx ?? 1200;
+  return columnWidthPx(layout) + layout.gapPx;
+}
+
+/** How many fixed-width columns fit in the given container width */
+export function columnsForContainerWidth(
+  containerWidthPx: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  if (containerWidthPx <= 0) {
+    return layout.columns;
+  }
+  const stride = columnStridePx(layout);
+  return Math.max(1, Math.floor((containerWidthPx + layout.gapPx) / stride));
+}
+
+export function gridWidthForColumns(
+  columnCount: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  const trackWidth = columnWidthPx(layout);
+  return columnCount * trackWidth + Math.max(0, columnCount - 1) * layout.gapPx;
+}
+
+/** Layout config with columns derived from the live container width */
+export function layoutConfigForContainerWidth(
+  containerWidthPx: number,
+  layoutConfig?: Partial<WorkspaceLayoutConfig>
+): WorkspaceLayoutConfig {
+  const base = resolveLayoutConfig(layoutConfig);
+  return {
+    ...base,
+    columns: columnsForContainerWidth(containerWidthPx, base),
+  };
+}
+
+export function gridContentWidth(
+  layoutConfig?: Partial<WorkspaceLayoutConfig>,
+  columnCount?: number
+): number {
+  const layout = resolveLayoutConfig(layoutConfig);
+  const columns = columnCount ?? layout.columns;
+  return gridWidthForColumns(columns, layout);
 }
 
 export function toCssGridTemplate(
@@ -74,6 +120,7 @@ export function toCssGridTemplate(
 ): CssGridTemplate {
   const layout = resolveLayoutConfig(layoutConfig);
   const visible = gridItems(items);
+  const columns = Math.max(1, options?.columnCount ?? layout.columns);
   const rowCount = Math.max(1, maxGridRow(visible), options?.minRows ?? 0);
   const rowSizing = options?.rowSizing ?? 'content';
   const rowTrack =
@@ -83,15 +130,19 @@ export function toCssGridTemplate(
   const trackWidth = columnWidthPx(layout);
 
   return {
-    gridTemplateColumns: `repeat(${layout.columns}, ${trackWidth}px)`,
+    gridTemplateColumns: `repeat(${columns}, ${trackWidth}px)`,
     gridTemplateRows: `repeat(${rowCount}, ${rowTrack})`,
     gap: `${layout.gapPx}px`,
     rowCount,
-    items: visible.map(item => ({
-      instanceId: item.instanceId,
-      gridColumn: `${item.grid.colStart} / ${item.grid.colEnd}`,
-      gridRow: `${item.grid.rowStart} / ${item.grid.rowEnd}`,
-    })),
+    columnCount: columns,
+    items: visible.map(item => {
+      const clamped = clampPlacement(item.grid, columns);
+      return {
+        instanceId: item.instanceId,
+        gridColumn: `${clamped.colStart} / ${clamped.colEnd}`,
+        gridRow: `${item.grid.rowStart} / ${item.grid.rowEnd}`,
+      };
+    }),
   };
 }
 

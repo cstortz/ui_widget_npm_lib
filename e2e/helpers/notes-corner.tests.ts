@@ -9,6 +9,7 @@ import {
   exitEditMode,
   expectedNotesCornerPlacement,
   isolateNotesWidget,
+  readGridColumnCount,
   readGridPlacement,
   readWidgetGridFromState,
   resetLayout,
@@ -39,7 +40,8 @@ export function registerNotesCornerDropTests(demoPath: string): void {
       test(`Notes sticks when dropped in ${corner}`, async ({ page }) => {
         await dragCellToGridCorner(page, 'Notes', 'demo-notes', corner);
 
-        const expected = expectedNotesCornerPlacement(corner);
+        const columnCount = await readGridColumnCount(page);
+        const expected = expectedNotesCornerPlacement(corner, columnCount);
         const dropped = await waitForNotesPlacement(page, expected);
 
         await exitEditMode(page);

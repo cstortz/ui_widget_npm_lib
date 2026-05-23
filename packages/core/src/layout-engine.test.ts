@@ -14,6 +14,7 @@ import {
   validateLayout,
   evaluateGridMove,
   isGridPlacementWithinContainer,
+  columnsForContainerWidth,
 } from './layout-engine.js';
 import { migrateWorkspaceV1ToV2 } from './migrate-workspace.js';
 import { WidgetRegistry } from './widget-registry.js';
@@ -244,5 +245,11 @@ describe('LayoutEngine', () => {
       }),
       false
     );
+  });
+
+  it('derives column count from container width', () => {
+    assert.equal(columnsForContainerWidth(1200), 12);
+    assert.equal(columnsForContainerWidth(800), 8);
+    assert.equal(columnsForContainerWidth(3840), 38);
   });
 });

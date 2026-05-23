@@ -84,27 +84,12 @@ export async function dragCellBy(
   await page.mouse.up();
 }
 
-/** Drag a widget toward the bottom of the visible workspace while staying in bounds */
+/** Drag a widget down by a couple of row strides */
 export async function dragCellToGridBottom(page: Page, title: string): Promise<void> {
-  const wrapper = page.locator('.wdg-grid-workspace-layout-wrapper');
-  const wrapperBox = await wrapper.boundingBox();
+  const { rowStride } = await readGridDragStrides(page);
   const cell = await cellForWidget(page, title);
-  const cellBox = await cell.boundingBox();
-  if (!wrapperBox || !cellBox) {
-    throw new Error('Grid workspace or cell has no bounding box');
-  }
-
-  const grabOffsetY = 24;
-  const maxTopLeftY = wrapperBox.y + wrapperBox.height - cellBox.height - 8;
-  const targetGrabY = maxTopLeftY + grabOffsetY;
-  const startY = cellBox.y + grabOffsetY;
-  const deltaY = targetGrabY - startY;
-
-  await dragCellBy(page, cell, 0, Math.max(deltaY, rowStrideForDrag() * 2));
-}
-
-function rowStrideForDrag(): number {
-  return 88;
+  await dragCellBy(page, cell, 0, rowStride * 2);
+  await page.mouse.up();
 }
 
 export async function dragCellToGridCorner(
@@ -113,7 +98,8 @@ export async function dragCellToGridCorner(
   _widgetId: string,
   corner: GridCorner
 ): Promise<void> {
-  const target = expectedNotesCornerPlacement(corner);
+  const columnCount = await readGridColumnCount(page);
+  const target = expectedNotesCornerPlacement(corner, columnCount);
   const grid = page.getByTestId('grid-workspace');
   const gridBox = await grid.boundingBox();
   const cell = await cellForWidget(page, title);
@@ -138,13 +124,35 @@ export async function readGridDragStrides(
   page: Page
 ): Promise<{ colStride: number; rowStride: number }> {
   return page.evaluate(() => {
-    const gap = 8;
-    const columns = 12;
-    const gridWidth = 1200;
-    const trackWidth = (gridWidth - gap * (columns - 1)) / columns;
-    const colStride = trackWidth + gap;
+    const grid = document.querySelector('[data-testid="grid-workspace"]') as HTMLElement | null;
+    if (!grid) {
+      throw new Error('Grid workspace not found');
+    }
+    const style = getComputedStyle(grid);
+    const columnWidth = Number.parseFloat(style.getPropertyValue('--wdg-grid-col-width')) || 92 + 2 / 3;
+    const gap = Number.parseFloat(style.getPropertyValue('--wdg-grid-gap')) || 8;
+    const colStride = columnWidth + gap;
     const rowStride = 88;
     return { colStride, rowStride };
+  });
+}
+
+export async function readGridColumnCount(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const grid = document.querySelector('[data-testid="grid-workspace"]') as HTMLElement | null;
+    if (!grid) {
+      throw new Error('Grid workspace not found');
+    }
+    const fromAttr = Number(grid.dataset.gridColumns);
+    if (Number.isFinite(fromAttr) && fromAttr > 0) {
+      return fromAttr;
+    }
+    const style = getComputedStyle(grid);
+    const columnWidth = Number.parseFloat(style.getPropertyValue('--wdg-grid-col-width')) || 92 + 2 / 3;
+    const gap = Number.parseFloat(style.getPropertyValue('--wdg-grid-gap')) || 8;
+    const wrapper = grid.closest('.wdg-grid-workspace-layout-wrapper') as HTMLElement | null;
+    const width = wrapper?.clientWidth ?? grid.clientWidth;
+    return Math.max(1, Math.floor((width + gap) / (columnWidth + gap)));
   });
 }
 
@@ -154,6 +162,8 @@ export async function enterEditMode(page: Page): Promise<void> {
 }
 
 export async function exitEditMode(page: Page): Promise<void> {
+  await page.mouse.up();
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Done editing' }).click();
   await page.getByRole('button', { name: 'Edit layout' }).waitFor();
 }
@@ -172,17 +182,23 @@ export async function isolateNotesWidget(page: Page): Promise<void> {
   }
 }
 
-export function expectedNotesCornerPlacement(corner: GridCorner): GridPlacementNumbers {
+export function expectedNotesCornerPlacement(
+  corner: GridCorner,
+  columnCount = 12
+): GridPlacementNumbers {
+  const notesSpan = 7;
+  const rightStart = Math.max(1, columnCount - notesSpan + 1);
+  const rightEnd = rightStart + notesSpan;
   const span = { colStart: 0, colEnd: 0, rowStart: 0, rowEnd: 0 };
   switch (corner) {
     case 'top-left':
-      return { colStart: 1, colEnd: 8, rowStart: 1, rowEnd: 2 };
+      return { colStart: 1, colEnd: 1 + notesSpan, rowStart: 1, rowEnd: 2 };
     case 'top-right':
-      return { colStart: 6, colEnd: 13, rowStart: 1, rowEnd: 2 };
+      return { colStart: rightStart, colEnd: rightEnd, rowStart: 1, rowEnd: 2 };
     case 'bottom-left':
-      return { colStart: 1, colEnd: 8, rowStart: 2, rowEnd: 3 };
+      return { colStart: 1, colEnd: 1 + notesSpan, rowStart: 2, rowEnd: 3 };
     case 'bottom-right':
-      return { colStart: 6, colEnd: 13, rowStart: 2, rowEnd: 3 };
+      return { colStart: rightStart, colEnd: rightEnd, rowStart: 2, rowEnd: 3 };
     default:
       return span;
   }

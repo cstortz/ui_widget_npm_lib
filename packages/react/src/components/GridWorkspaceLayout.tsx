@@ -13,8 +13,8 @@ import type { WidgetLayoutItem } from '@ncs_software/widget-system';
 import {
   gridItems as filterGridItems,
   evaluateGridMove,
-  gridContentWidth,
   columnWidthPx,
+  layoutConfigForContainerWidth,
   placementFromDragDelta,
   resolveLayoutConfig,
   rowsForContainerHeight,
@@ -91,7 +91,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
   const wrapperRef = useRef<HTMLDivElement>(null);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [layoutFeedback, setLayoutFeedback] = useState<string | null>(null);
-  const [containerHeight, setContainerHeight] = useState(0);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -103,11 +103,15 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     const observer = new ResizeObserver(entries => {
       const entry = entries[0];
       if (entry) {
-        setContainerHeight(entry.contentRect.height);
+        setContainerSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
       }
     });
     observer.observe(el);
-    setContainerHeight(el.getBoundingClientRect().height);
+    const rect = el.getBoundingClientRect();
+    setContainerSize({ width: rect.width, height: rect.height });
     return () => observer.disconnect();
   }, [workspace?.items]);
 
@@ -127,23 +131,31 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     [workspace]
   );
 
-  const layoutConfig = useMemo(
+  const baseLayoutConfig = useMemo(
     () => resolveLayoutConfig({ ...workspace?.layout, ...layout }),
     [workspace, layout]
   );
+
+  const activeLayoutConfig = useMemo(() => {
+    if (containerSize.width <= 0) {
+      return baseLayoutConfig;
+    }
+    return layoutConfigForContainerWidth(containerSize.width, baseLayoutConfig);
+  }, [baseLayoutConfig, containerSize.width]);
 
   const gridTemplate = useMemo(() => {
     if (!workspace?.items) {
       return null;
     }
     const minRows =
-      editMode && containerHeight > 0
-        ? rowsForContainerHeight(containerHeight, layoutConfig)
+      editMode && containerSize.height > 0
+        ? rowsForContainerHeight(containerSize.height, activeLayoutConfig)
         : undefined;
-    return toCssGridTemplate(workspace.items, layoutConfig, {
+    return toCssGridTemplate(workspace.items, activeLayoutConfig, {
       minRows,
+      columnCount: activeLayoutConfig.columns,
     });
-  }, [workspace, layoutConfig, editMode, containerHeight]);
+  }, [workspace, activeLayoutConfig, editMode, containerSize.height]);
 
   const cellStyle = (instanceId: string) => {
     const cell = gridTemplate?.items.find(i => i.instanceId === instanceId);
@@ -173,19 +185,18 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
     setActiveId(null);
 
     const gridRect = gridRef.current.getBoundingClientRect();
-    const viewportRect = wrapperRef.current?.getBoundingClientRect() ?? gridRect;
     const container: GridContainerMetrics = {
       left: gridRect.left,
       top: gridRect.top,
-      width: gridRect.width,
-      height: viewportRect.height,
+      width: containerSize.width > 0 ? containerSize.width : gridRect.width,
+      height: containerSize.height > 0 ? containerSize.height : gridRect.height,
     };
     const placement = placementFromDragDelta(
       item.grid,
       event.delta.x,
       event.delta.y,
       container,
-      layoutConfig
+      activeLayoutConfig
     );
 
     const rejection = evaluateGridMove(
@@ -194,7 +205,7 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
       placement,
       container.width,
       container.height,
-      layoutConfig,
+      activeLayoutConfig,
       measuredRects
     );
     if (rejection === 'out_of_bounds') {
@@ -221,15 +232,16 @@ export function GridWorkspaceLayout({ editMode = false, renderWidget }: GridWork
         <div
           ref={gridRef}
           data-testid="grid-workspace"
+          data-grid-columns={gridTemplate.columnCount}
           className={`wdg-grid-workspace-layout${editMode ? ' wdg-grid-workspace-layout--edit' : ''}`}
           style={{
             display: 'grid',
             gridTemplateColumns: gridTemplate.gridTemplateColumns,
             gridTemplateRows: gridTemplate.gridTemplateRows,
             gap: gridTemplate.gap,
-            width: gridContentWidth(layoutConfig),
-            ['--wdg-grid-col-width' as string]: `${columnWidthPx(layoutConfig)}px`,
-            ['--wdg-grid-gap' as string]: `${layoutConfig.gapPx}px`,
+            width: '100%',
+            ['--wdg-grid-col-width' as string]: `${columnWidthPx(activeLayoutConfig)}px`,
+            ['--wdg-grid-gap' as string]: `${activeLayoutConfig.gapPx}px`,
           }}
         >
           {gridItems.map(item => {
