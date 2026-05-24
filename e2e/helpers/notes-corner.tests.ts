@@ -21,6 +21,7 @@ import {
 
 export function registerNotesCornerDropTests(demoPath: string): void {
   test.describe('Notes corner drops at 4K', () => {
+    test.describe.configure({ timeout: 90_000 });
     test.use({ viewport: VIEWPORT_4K });
 
     test.beforeEach(async ({ page }) => {

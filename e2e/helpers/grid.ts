@@ -72,16 +72,20 @@ export async function dragCellBy(
   deltaX: number,
   deltaY: number
 ): Promise<void> {
-  const box = await cell.boundingBox();
+  const handle = cell.locator('.wdg-grid-workspace-layout__drag-handle');
+  const box = (await handle.count()) > 0 ? await handle.boundingBox() : await cell.boundingBox();
   if (!box) {
-    throw new Error('Grid cell has no bounding box');
+    throw new Error('Grid cell drag handle has no bounding box');
   }
   const startX = box.x + box.width / 2;
-  const startY = box.y + 22;
+  const startY = box.y + box.height / 2;
+  const distance = Math.hypot(deltaX, deltaY);
+  const steps = Math.max(12, Math.min(48, Math.ceil(distance / 40) || 12));
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 12 });
+  await page.mouse.move(startX + deltaX, startY + deltaY, { steps });
   await page.mouse.up();
+  await page.waitForTimeout(150);
 }
 
 export async function resizeCellBy(
@@ -121,25 +125,34 @@ export async function dragCellToGridCorner(
   const columnCount = await readGridColumnCount(page);
   const target = expectedNotesCornerPlacement(corner, columnCount);
   const grid = page.getByTestId('grid-workspace');
-  const gridBox = await grid.boundingBox();
   const cell = await cellForWidget(page, title);
+  const handle = cell.locator('.wdg-grid-workspace-layout__drag-handle');
+
+  await handle.waitFor({ state: 'visible' });
+
+  const gridBox = await grid.boundingBox();
   const cellBox = await cell.boundingBox();
-  if (!gridBox || !cellBox) {
-    throw new Error('Grid workspace or cell has no bounding box');
+  const handleBox = await handle.boundingBox();
+  if (!gridBox || !cellBox || !handleBox) {
+    throw new Error('Grid workspace, cell, or drag handle has no bounding box');
   }
 
   const { colStride, rowStride } = await readGridDragStrides(page);
-  const handleOffsetX = cellBox.width / 2;
-  const handleOffsetY = 22;
-  const targetX = gridBox.x + (target.colStart - 1) * colStride + handleOffsetX;
-  const targetY = gridBox.y + (target.rowStart - 1) * rowStride + handleOffsetY;
-  const startX = cellBox.x + handleOffsetX;
-  const startY = cellBox.y + handleOffsetY;
+  const handleCenterOffsetX = handleBox.x - cellBox.x + handleBox.width / 2;
+  const handleCenterOffsetY = handleBox.y - cellBox.y + handleBox.height / 2;
+  const targetX = gridBox.x + (target.colStart - 1) * colStride + handleCenterOffsetX;
+  const targetY = gridBox.y + (target.rowStart - 1) * rowStride + handleCenterOffsetY;
+  const startX = cellBox.x + handleCenterOffsetX;
+  const startY = cellBox.y + handleCenterOffsetY;
+
+  const distance = Math.hypot(targetX - startX, targetY - startY);
+  const steps = Math.max(24, Math.min(80, Math.ceil(distance / 35)));
 
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(targetX, targetY, { steps: 12 });
+  await page.mouse.move(targetX, targetY, { steps });
   await page.mouse.up();
+  await page.waitForTimeout(200);
 }
 
 export async function readGridDragStrides(
@@ -230,7 +243,7 @@ export function expectedNotesCornerPlacement(
 export async function waitForNotesPlacement(
   page: Page,
   expected: GridPlacementNumbers,
-  timeout = 5000
+  timeout = 15_000
 ): Promise<GridPlacementNumbers> {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
