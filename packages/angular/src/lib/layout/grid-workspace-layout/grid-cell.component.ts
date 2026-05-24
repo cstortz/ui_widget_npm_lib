@@ -20,10 +20,10 @@ import {
       :host {
         display: flex;
         flex-direction: column;
-        align-self: start;
+        align-self: stretch;
         width: 100%;
-        height: auto;
         min-width: 0;
+        min-height: 0;
         overflow: visible;
       }
     `,

@@ -190,9 +190,8 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         position: relative;
         display: flex;
         flex-direction: column;
-        align-self: start;
+        align-self: stretch;
         width: 100%;
-        height: auto;
         min-height: 0;
       }
 
@@ -201,6 +200,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         flex: 1 1 auto;
         width: 100%;
         min-width: 0;
+        min-height: 0;
       }
 
       .wdg-grid-workspace-layout__cell--edit {

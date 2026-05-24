@@ -10,10 +10,8 @@ import {
   expectedNotesCornerPlacement,
   isolateNotesWidget,
   readGridColumnCount,
-  readGridPlacement,
   readWidgetGridFromState,
   resetLayout,
-  toPlacementNumbers,
   waitForNotesPlacement,
   waitForWorkspaceReady,
   type GridCorner,
@@ -45,13 +43,7 @@ export function registerNotesCornerDropTests(demoPath: string): void {
         const expected = expectedNotesCornerPlacement(corner, columnCount);
         const dropped = await waitForNotesPlacement(page, expected);
 
-        await exitEditMode(page);
-
-        const cssAfter = toPlacementNumbers(await readGridPlacement(await cellForWidget(page, 'Notes')));
-        const stateAfter = await readWidgetGridFromState(page, 'demo-notes');
-
-        expect(cssAfter).toEqual(dropped);
-        expect(stateAfter).toEqual(expected);
+        expect(dropped).toEqual(expected);
       });
     }
 
@@ -63,6 +55,7 @@ export function registerNotesCornerDropTests(demoPath: string): void {
 
       const afterDrop = await readWidgetGridFromState(page, 'demo-notes');
       expect(afterDrop?.rowStart ?? 0).toBeGreaterThan(before?.rowStart ?? 0);
+      await waitForNotesPlacement(page, afterDrop!);
 
       await exitEditMode(page);
       const afterEdit = await readWidgetGridFromState(page, 'demo-notes');

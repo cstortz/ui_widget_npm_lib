@@ -193,15 +193,26 @@ export async function readGridColumnCount(page: Page): Promise<number> {
 }
 
 export async function enterEditMode(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Edit layout' }).click();
-  await page.getByRole('button', { name: 'Done editing' }).waitFor();
+  const editButton = page.getByRole('button', { name: 'Edit layout' });
+  await editButton.waitFor({ state: 'visible' });
+  await editButton.scrollIntoViewIfNeeded();
+  await editButton.click();
+  await page.getByRole('button', { name: 'Done editing' }).waitFor({ state: 'visible' });
 }
 
 export async function exitEditMode(page: Page): Promise<void> {
   await page.mouse.up();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Done editing' }).click();
-  await page.getByRole('button', { name: 'Edit layout' }).waitFor();
+  await page
+    .locator('.wdg-grid-workspace-layout__cell--dragging')
+    .waitFor({ state: 'detached', timeout: 5000 })
+    .catch(() => undefined);
+
+  const doneButton = page.getByRole('button', { name: 'Done editing' });
+  await doneButton.waitFor({ state: 'visible', timeout: 10_000 });
+  await doneButton.scrollIntoViewIfNeeded();
+  await doneButton.click({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Edit layout' }).waitFor({ state: 'visible', timeout: 10_000 });
 }
 
 export async function resetLayout(page: Page): Promise<void> {

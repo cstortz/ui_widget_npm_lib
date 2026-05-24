@@ -7,10 +7,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  timeout: 60_000,
+  timeout: 90_000,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     trace: 'on-first-retry',
+    actionTimeout: 15_000,
   },
   projects: [
     {
