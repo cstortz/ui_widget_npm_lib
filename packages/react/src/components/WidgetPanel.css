@@ -3,7 +3,9 @@
   flex-direction: column;
   box-sizing: border-box;
   width: 100%;
-  height: auto;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 4px;
   background: #fff;
@@ -39,6 +41,8 @@
 }
 
 .wdg-widget-panel__content {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding: 1rem;
 }

@@ -59,7 +59,9 @@ import { MatIconModule } from '@angular/material/icon';
         flex-direction: column;
         box-sizing: border-box;
         width: 100%;
-        height: auto;
+        height: 100%;
+        min-height: 0;
+        flex: 1 1 auto;
       }
 
       .wdg-widget-panel__header {
@@ -74,6 +76,8 @@ import { MatIconModule } from '@angular/material/icon';
       }
 
       .wdg-widget-panel__content {
+        flex: 1 1 auto;
+        min-height: 0;
         overflow: auto;
       }
 

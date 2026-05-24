@@ -197,10 +197,17 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
 
       .wdg-grid-workspace-layout__cell-content {
         position: relative;
+        display: flex;
+        flex-direction: column;
         flex: 1 1 auto;
         width: 100%;
         min-width: 0;
         min-height: 0;
+      }
+
+      .wdg-grid-workspace-layout__cell--edit .wdg-grid-workspace-layout__cell-content {
+        padding-bottom: 1.25rem;
+        padding-right: 1.25rem;
       }
 
       .wdg-grid-workspace-layout__cell--edit {
@@ -260,19 +267,31 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         cursor: ew-resize;
       }
 
+      .wdg-grid-resize-handle[data-edge='south'],
+      .wdg-grid-resize-handle[data-edge='north'] {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 1.25rem;
+        cursor: ns-resize;
+      }
+
       .wdg-grid-resize-handle[data-edge='east'] {
         right: 0;
         border-radius: 4px 0 0 4px;
       }
 
-      .wdg-grid-resize-handle--bar {
-        position: relative;
-        width: 100%;
-        height: 1.25rem;
-        flex-shrink: 0;
-        cursor: ns-resize;
+      .wdg-grid-resize-handle--bar,
+      .wdg-grid-resize-handle[data-edge='south'] {
+        bottom: 0;
         z-index: 21;
         border-radius: 0 0 4px 4px;
+      }
+
+      .wdg-grid-resize-handle[data-edge='north'] {
+        top: 0;
+        z-index: 21;
+        border-radius: 4px 4px 0 0;
       }
 
       .wdg-grid-resize-handle:active {

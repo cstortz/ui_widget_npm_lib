@@ -113,13 +113,15 @@ export function registerGridLayoutTests(demoPath: string): void {
 
       const notesCell = await cellForWidget(page, 'Notes');
       const before = await readGridPlacement(notesCell);
-      const beforeBox = await notesCell.boundingBox();
+      const beforeCellBox = await notesCell.boundingBox();
+      const beforePanelBox = await notesCell.locator('.wdg-widget-panel').boundingBox();
       const { rowStride } = await readGridDragStrides(page);
 
       await resizeCellBy(page, notesCell, 'south', 0, rowStride);
 
       const after = await readGridPlacement(await cellForWidget(page, 'Notes'));
-      const afterBox = await notesCell.boundingBox();
+      const afterCellBox = await notesCell.boundingBox();
+      const afterPanelBox = await notesCell.locator('.wdg-widget-panel').boundingBox();
       const state = await readWidgetGridFromState(page, 'demo-notes');
 
       expect(Number(before.rowStart)).toBe(1);
@@ -127,7 +129,8 @@ export function registerGridLayoutTests(demoPath: string): void {
       expect(Number(after.rowEnd)).toBe(Number(before.rowEnd) + 1);
       expect(state?.rowStart).toBe(1);
       expect(state?.rowEnd).toBe(Number(before.rowEnd) + 1);
-      expect(afterBox?.height ?? 0).toBeGreaterThan((beforeBox?.height ?? 0) + rowStride * 0.5);
+      expect(afterCellBox?.height ?? 0).toBeGreaterThan((beforeCellBox?.height ?? 0) + rowStride * 0.5);
+      expect(afterPanelBox?.height ?? 0).toBeGreaterThan((beforePanelBox?.height ?? 0) + rowStride * 0.5);
     });
 
     test('supports horizontal then vertical resize on the same widget', async ({ page }) => {
