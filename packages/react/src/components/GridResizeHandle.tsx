@@ -131,7 +131,7 @@ export function GridResizeHandle({
   return (
     <div
       ref={handleRef}
-      className="wdg-grid-resize-handle"
+      className={`wdg-grid-resize-handle${isVertical ? ' wdg-grid-resize-handle--bar' : ''}`}
       data-edge={edge}
       aria-label={isVertical ? 'Resize height' : 'Resize width'}
       onPointerDown={onPointerDown}

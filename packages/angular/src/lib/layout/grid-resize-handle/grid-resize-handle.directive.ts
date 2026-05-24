@@ -24,18 +24,7 @@ export type GridResizeEdge = 'east' | 'west' | 'south' | 'north';
   host: {
     class: 'wdg-grid-resize-handle',
     '[attr.data-edge]': 'edge',
-    '[style.position]': "'absolute'",
-    '[style.display]': "'flex'",
-    '[style.alignItems]': "'center'",
-    '[style.justifyContent]': "'center'",
     '[style.touchAction]': "'none'",
-    '[style.color]': "'rgba(25, 118, 210, 0.92)'",
-    '[style.background]': "'rgba(255, 255, 255, 0.92)'",
-    '[style.border]': "'1px solid rgba(25, 118, 210, 0.35)'",
-    '[style.boxShadow]': "'0 1px 2px rgba(0, 0, 0, 0.12)'",
-    '[style.fontSize]': "'0.7rem'",
-    '[style.fontWeight]': "'700'",
-    '[style.userSelect]': "'none'",
   },
 })
 export class GridResizeHandleDirective {
@@ -44,77 +33,14 @@ export class GridResizeHandleDirective {
   @Input() layoutBounds?: GridLayoutBounds;
   @Output() resizeComplete = new EventEmitter<void>();
 
+  @HostBinding('class.wdg-grid-resize-handle--bar')
+  get isBarLayout(): boolean {
+    return this.edge === 'south' || this.edge === 'north';
+  }
+
   @HostBinding('attr.aria-label')
   get ariaLabel(): string {
     return this.isVertical ? 'Resize height' : 'Resize width';
-  }
-
-  @HostBinding('style.zIndex')
-  get styleZIndex(): number {
-    return this.isVertical ? 21 : 20;
-  }
-
-  @HostBinding('style.top')
-  get styleTop(): string | null {
-    if (this.edge === 'north') {
-      return '0';
-    }
-    return this.isHorizontal ? '0' : null;
-  }
-
-  @HostBinding('style.bottom')
-  get styleBottom(): string | null {
-    if (this.edge === 'south') {
-      return '0';
-    }
-    return this.isHorizontal ? '0' : null;
-  }
-
-  @HostBinding('style.left')
-  get styleLeft(): string | null {
-    if (this.edge === 'west') {
-      return '0';
-    }
-    return this.isVertical ? '0' : null;
-  }
-
-  @HostBinding('style.right')
-  get styleRight(): string | null {
-    if (this.edge === 'east') {
-      return '0';
-    }
-    return this.isVertical ? '0' : null;
-  }
-
-  @HostBinding('style.width')
-  get styleWidth(): string | null {
-    return this.isHorizontal ? '14px' : null;
-  }
-
-  @HostBinding('style.height')
-  get styleHeight(): string | null {
-    return this.isVertical ? '14px' : null;
-  }
-
-  @HostBinding('style.cursor')
-  get styleCursor(): string {
-    return this.isVertical ? 'ns-resize' : 'ew-resize';
-  }
-
-  @HostBinding('style.borderRadius')
-  get styleBorderRadius(): string | null {
-    switch (this.edge) {
-      case 'east':
-        return '4px 0 0 4px';
-      case 'west':
-        return '0 4px 4px 0';
-      case 'south':
-        return '4px 4px 0 0';
-      case 'north':
-        return '0 0 4px 4px';
-      default:
-        return null;
-    }
   }
 
   @HostBinding('textContent')
@@ -135,10 +61,6 @@ export class GridResizeHandleDirective {
 
   private get isVertical(): boolean {
     return this.edge === 'south' || this.edge === 'north';
-  }
-
-  private get isHorizontal(): boolean {
-    return this.edge === 'east' || this.edge === 'west';
   }
 
   private get columnStride(): number {

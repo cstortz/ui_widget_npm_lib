@@ -76,8 +76,8 @@ export async function dragCellBy(
   if (!box) {
     throw new Error('Grid cell has no bounding box');
   }
-  const startX = box.x + 24;
-  const startY = box.y + 24;
+  const startX = box.x + box.width / 2;
+  const startY = box.y + 22;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 12 });
@@ -129,10 +129,12 @@ export async function dragCellToGridCorner(
   }
 
   const { colStride, rowStride } = await readGridDragStrides(page);
-  const targetX = gridBox.x + (target.colStart - 0.5) * colStride + 24;
-  const targetY = gridBox.y + (target.rowStart - 0.5) * rowStride + 24;
-  const startX = cellBox.x + 24;
-  const startY = cellBox.y + 24;
+  const handleOffsetX = cellBox.width / 2;
+  const handleOffsetY = 22;
+  const targetX = gridBox.x + (target.colStart - 1) * colStride + handleOffsetX;
+  const targetY = gridBox.y + (target.rowStart - 1) * rowStride + handleOffsetY;
+  const startX = cellBox.x + handleOffsetX;
+  const startY = cellBox.y + handleOffsetY;
 
   await page.mouse.move(startX, startY);
   await page.mouse.down();

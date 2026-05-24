@@ -104,14 +104,12 @@ function DraggableGridCell({
           </svg>
         </div>
       )}
-      {renderWidget(item)}
+      <div className="wdg-grid-workspace-layout__cell-content">{renderWidget(item)}</div>
       {editMode && canResize && !isDragOverlaySource && (
-        <>
-          <GridResizeHandle instanceId={item.instanceId} edge="east" layoutBounds={layoutBounds} />
-          {layoutBounds.rows !== undefined && (
-            <GridResizeHandle instanceId={item.instanceId} edge="south" layoutBounds={layoutBounds} />
-          )}
-        </>
+        <GridResizeHandle instanceId={item.instanceId} edge="east" layoutBounds={layoutBounds} />
+      )}
+      {editMode && canResize && !isDragOverlaySource && layoutBounds.rows !== undefined && (
+        <GridResizeHandle instanceId={item.instanceId} edge="south" layoutBounds={layoutBounds} />
       )}
     </div>
   );

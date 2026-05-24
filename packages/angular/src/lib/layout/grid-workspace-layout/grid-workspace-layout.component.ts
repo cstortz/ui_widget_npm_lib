@@ -103,15 +103,19 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
               </div>
             }
             @if (bodyTemplate) {
-              <ng-container
-                *ngTemplateOutlet="
-                  bodyTemplate;
-                  context: { $implicit: item, item: item }
-                "
-              />
+              <div class="wdg-grid-workspace-layout__cell-content">
+                <ng-container
+                  *ngTemplateOutlet="
+                    bodyTemplate;
+                    context: { $implicit: item, item: item }
+                  "
+                />
+              </div>
             } @else {
-              <div class="wdg-grid-workspace-layout__placeholder">
-                {{ item.widgetId }}
+              <div class="wdg-grid-workspace-layout__cell-content">
+                <div class="wdg-grid-workspace-layout__placeholder">
+                  {{ item.widgetId }}
+                </div>
               </div>
             }
             @if (editMode && permissions.resize) {
@@ -157,6 +161,11 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
       }
 
       .wdg-grid-workspace-layout--edit {
+        --wdg-edit-chrome-bg: rgba(25, 118, 210, 0.08);
+        --wdg-edit-chrome-border: rgba(25, 118, 210, 0.18);
+        --wdg-edit-chrome-active-bg: rgba(25, 118, 210, 0.14);
+        --wdg-edit-chrome-color: rgba(0, 0, 0, 0.54);
+
         background-image:
           repeating-linear-gradient(
             0deg,
@@ -179,26 +188,35 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
 
       .wdg-grid-workspace-layout__cell {
         position: relative;
+        display: flex;
+        flex-direction: column;
         align-self: start;
         width: 100%;
         height: auto;
+        min-height: 0;
+      }
+
+      .wdg-grid-workspace-layout__cell-content {
+        position: relative;
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
       }
 
       .wdg-grid-workspace-layout__cell--edit {
         outline: 1px dashed rgba(0, 0, 0, 0.2);
         outline-offset: -1px;
-        cursor: grab;
       }
 
       .wdg-grid-workspace-layout__cell--edit.cdk-drag-dragging {
-        cursor: grabbing;
         z-index: 3;
       }
 
       .wdg-grid-workspace-layout__drag-handle {
         position: absolute;
-        left: 0;
+        left: 50%;
         top: 0;
+        transform: translateX(-50%);
         width: 2.75rem;
         height: 2.75rem;
         z-index: 12;
@@ -207,15 +225,58 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         justify-content: center;
         cursor: grab;
         touch-action: none;
-        color: rgba(0, 0, 0, 0.54);
-        background: rgba(25, 118, 210, 0.08);
-        border: 1px solid rgba(25, 118, 210, 0.18);
-        border-radius: 4px 0 0 0;
+        color: var(--wdg-edit-chrome-color);
+        background: var(--wdg-edit-chrome-bg);
+        border: 1px solid var(--wdg-edit-chrome-border);
+        border-radius: 4px;
+        box-sizing: border-box;
       }
 
       .wdg-grid-workspace-layout__drag-handle:active {
         cursor: grabbing;
-        background: rgba(25, 118, 210, 0.14);
+        background: var(--wdg-edit-chrome-active-bg);
+      }
+
+      .wdg-grid-resize-handle {
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--wdg-edit-chrome-color);
+        background: var(--wdg-edit-chrome-bg);
+        border: 1px solid var(--wdg-edit-chrome-border);
+        box-sizing: border-box;
+        font-size: 0.7rem;
+        font-weight: 700;
+        user-select: none;
+      }
+
+      .wdg-grid-resize-handle[data-edge='east'],
+      .wdg-grid-resize-handle[data-edge='west'] {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1.25rem;
+        cursor: ew-resize;
+      }
+
+      .wdg-grid-resize-handle[data-edge='east'] {
+        right: 0;
+        border-radius: 4px 0 0 4px;
+      }
+
+      .wdg-grid-resize-handle--bar {
+        position: relative;
+        width: 100%;
+        height: 1.25rem;
+        flex-shrink: 0;
+        cursor: ns-resize;
+        z-index: 21;
+        border-radius: 0 0 4px 4px;
+      }
+
+      .wdg-grid-resize-handle:active {
+        background: var(--wdg-edit-chrome-active-bg);
       }
 
       .wdg-grid-workspace-layout__drag-icon {
