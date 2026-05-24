@@ -224,7 +224,7 @@ export async function resetLayout(page: Page): Promise<void> {
 export async function isolateNotesWidget(page: Page): Promise<void> {
   for (const title of ['Checklist', 'Timer', 'Quick Links']) {
     const cell = await cellForWidget(page, title);
-    await cell.getByRole('button', { name: 'Collapse to tab bar' }).click();
+    await cell.getByRole('button', { name: 'Collapse to tab bar' }).click({ force: true });
     await cell.waitFor({ state: 'hidden' });
   }
 }

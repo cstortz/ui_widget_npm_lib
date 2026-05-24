@@ -16,6 +16,9 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [MatCardModule, MatButtonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'wdg-widget-panel-host',
+  },
   template: `
     <mat-card class="wdg-widget-panel" [class.wdg-widget-panel--contracted]="!expanded()">
       <mat-card-header class="wdg-widget-panel__header">
@@ -54,6 +57,15 @@ import { MatIconModule } from '@angular/material/icon';
   `,
   styles: [
     `
+      :host {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+      }
+
       .wdg-widget-panel {
         display: flex;
         flex-direction: column;
