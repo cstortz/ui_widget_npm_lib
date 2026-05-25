@@ -220,12 +220,28 @@ export async function resetLayout(page: Page): Promise<void> {
   await waitForWorkspaceReady(page);
 }
 
+/** Move a widget into the tab bar so the grid cell is removed */
+export async function collapseWidgetToTab(page: Page, title: string): Promise<void> {
+  const cell = await cellForWidget(page, title);
+  const instanceId = await cell.getAttribute('data-wdg-instance-id');
+  if (!instanceId) {
+    throw new Error(`Widget "${title}" has no data-wdg-instance-id`);
+  }
+
+  await page.evaluate(async id => {
+    await window.__WDG_TEST__?.collapseToTab?.(id);
+  }, instanceId);
+
+  await page.waitForFunction(id => {
+    const items = window.__WDG_TEST__?.getItems() ?? [];
+    return items.some(item => item.instanceId === id && item.mode === 'tabbed');
+  }, instanceId);
+}
+
 /** Collapse all widgets except Notes so corner drops have open grid space */
 export async function isolateNotesWidget(page: Page): Promise<void> {
   for (const title of ['Checklist', 'Timer', 'Quick Links']) {
-    const cell = await cellForWidget(page, title);
-    await cell.getByRole('button', { name: 'Collapse to tab bar' }).click({ force: true });
-    await cell.waitFor({ state: 'hidden' });
+    await collapseWidgetToTab(page, title);
   }
 }
 

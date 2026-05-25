@@ -121,7 +121,10 @@ export function registerGridLayoutTests(demoPath: string): void {
 
       const after = await readGridPlacement(await cellForWidget(page, 'Notes'));
       const afterCellBox = await notesCell.boundingBox();
-      const afterPanelBox = await notesCell.locator('.wdg-widget-panel').boundingBox();
+      const afterPanelBox = await notesCell
+        .locator('.wdg-widget-panel-host, .wdg-widget-panel')
+        .first()
+        .boundingBox();
       const state = await readWidgetGridFromState(page, 'demo-notes');
 
       expect(Number(before.rowStart)).toBe(1);

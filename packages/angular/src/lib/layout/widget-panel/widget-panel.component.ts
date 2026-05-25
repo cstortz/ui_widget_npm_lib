@@ -66,6 +66,24 @@ import { MatIconModule } from '@angular/material/icon';
         min-height: 0;
       }
 
+      :host ::ng-deep mat-card.wdg-widget-panel {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        box-sizing: border-box;
+      }
+
+      :host ::ng-deep mat-card.wdg-widget-panel .mat-mdc-card-content,
+      .wdg-widget-panel__content {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
       .wdg-widget-panel {
         display: flex;
         flex-direction: column;
@@ -85,12 +103,6 @@ import { MatIconModule } from '@angular/material/icon';
 
       .wdg-widget-panel__spacer {
         flex: 1;
-      }
-
-      .wdg-widget-panel__content {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: auto;
       }
 
       .wdg-widget-panel__content--hidden {

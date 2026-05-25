@@ -1,11 +1,13 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import type { WidgetLayoutItem } from '@ncs_software/widget-system';
+import { firstValueFrom } from 'rxjs';
 import { WorkspaceLayoutService } from '../services/workspace-layout.service';
 
 declare global {
   interface Window {
     __WDG_TEST__?: {
       getItems: () => readonly WidgetLayoutItem[];
+      collapseToTab: (instanceId: string) => Promise<unknown>;
     };
   }
 }
@@ -21,7 +23,9 @@ export class TestDebugBridgeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     window.__WDG_TEST__ = {
-      getItems: () => this.layoutService.gridItems,
+      getItems: () => this.layoutService.workspace?.items ?? [],
+      collapseToTab: (instanceId: string) =>
+        firstValueFrom(this.layoutService.collapseToTab(instanceId)),
     };
   }
 

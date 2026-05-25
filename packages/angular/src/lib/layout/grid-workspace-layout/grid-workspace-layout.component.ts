@@ -206,6 +206,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
       }
 
       .wdg-grid-workspace-layout__cell--edit .wdg-grid-workspace-layout__cell-content {
+        padding-top: 1.375rem;
         padding-bottom: 1.25rem;
         padding-right: 1.25rem;
       }
