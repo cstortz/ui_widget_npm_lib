@@ -205,6 +205,15 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         min-height: 0;
       }
 
+      .wdg-grid-workspace-layout__cell-content > * {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+      }
+
       .wdg-grid-workspace-layout__cell--edit .wdg-grid-workspace-layout__cell-content {
         padding-top: 1.375rem;
         padding-bottom: 1.25rem;

@@ -12,6 +12,9 @@ import { DemoLinksWidgetComponent } from '../widgets/demo-links-widget.component
 @Component({
   selector: 'demo-widget-host',
   standalone: true,
+  host: {
+    class: 'demo-widget-host',
+  },
   imports: [
     WidgetPanelComponent,
     DemoNotesWidgetComponent,
