@@ -8,6 +8,7 @@ import {
   Input,
   TemplateRef,
   ViewChild,
+  ViewEncapsulation,
   computed,
   inject,
   signal,
