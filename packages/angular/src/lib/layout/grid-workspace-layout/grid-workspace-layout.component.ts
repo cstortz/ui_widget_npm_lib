@@ -51,6 +51,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
     GridResizeHandleDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
   template: `
     <div class="wdg-grid-workspace-layout-wrapper" #gridWrapper>
       <div
@@ -206,13 +207,31 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         min-height: 0;
       }
 
-      .wdg-grid-workspace-layout__cell-content > * {
+      .wdg-grid-workspace-layout__cell-content > *,
+      .wdg-grid-workspace-layout__cell-content demo-widget-host,
+      .wdg-grid-workspace-layout__cell-content wdg-widget-panel {
         position: absolute;
         inset: 0;
         display: flex;
         flex-direction: column;
         min-height: 0;
         box-sizing: border-box;
+      }
+
+      .wdg-grid-workspace-layout__cell-content wdg-widget-panel mat-card.wdg-widget-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box;
+      }
+
+      .wdg-grid-workspace-layout__cell-content wdg-widget-panel mat-card.wdg-widget-panel .mat-mdc-card-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
       }
 
       .wdg-grid-workspace-layout__cell--edit .wdg-grid-workspace-layout__cell-content {

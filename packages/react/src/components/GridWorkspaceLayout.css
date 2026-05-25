@@ -69,13 +69,19 @@
   min-height: 0;
 }
 
-.wdg-grid-workspace-layout__cell-content > * {
+.wdg-grid-workspace-layout__cell-content > *,
+.wdg-grid-workspace-layout__cell-content .wdg-widget-panel {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
   box-sizing: border-box;
+}
+
+.wdg-grid-workspace-layout__cell-content .wdg-widget-panel {
+  flex: 1 1 auto;
+  height: 100%;
 }
 
 .wdg-grid-workspace-layout__cell--edit .wdg-grid-workspace-layout__cell-content {

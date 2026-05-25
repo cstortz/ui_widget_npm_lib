@@ -46,6 +46,18 @@ import { DemoLinksWidgetComponent } from '../widgets/demo-links-widget.component
       }
     </wdg-widget-panel>
   `,
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+      }
+    `,
+  ],
 })
 export class DemoWidgetHostComponent {
   @Input({ required: true }) item!: WidgetLayoutItem;
