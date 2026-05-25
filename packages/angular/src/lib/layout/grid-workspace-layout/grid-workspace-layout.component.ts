@@ -224,7 +224,7 @@ import { LAYOUT_PERMISSIONS, WORKSPACE_LAYOUT_CONFIG } from '../../tokens';
         position: absolute;
         left: 50%;
         top: 0;
-        transform: translateX(-50%);
+        transform: translate(-50%, -50%);
         width: 2.75rem;
         height: 2.75rem;
         z-index: 12;
