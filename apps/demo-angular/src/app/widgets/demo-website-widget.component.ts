@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import type { WidgetConfig, WidgetState } from '@ncs_software/widget-system';
 import { WidgetStateService } from '@ncs_software/widget-system-angular';
 import { defaultWebsiteUrl, sanitizeWebsiteUrl } from './website-url';
@@ -88,9 +89,12 @@ export class DemoWebsiteWidgetComponent implements OnInit, OnDestroy {
   @Output() stateChange = new EventEmitter<WidgetState<DemoWebsiteState>>();
 
   protected readonly urlInput = signal(defaultWebsiteUrl());
-  protected readonly frameUrl = signal(defaultWebsiteUrl());
 
   private readonly widgetStateService = inject(WidgetStateService);
+  private readonly sanitizer = inject(DomSanitizer);
+  protected readonly frameUrl = signal<SafeResourceUrl>(
+    this.sanitizer.bypassSecurityTrustResourceUrl(defaultWebsiteUrl())
+  );
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
@@ -99,7 +103,7 @@ export class DemoWebsiteWidgetComponent implements OnInit, OnDestroy {
       .subscribe(saved => {
         const url = sanitizeWebsiteUrl(saved?.payload.url ?? defaultWebsiteUrl());
         this.urlInput.set(url);
-        this.frameUrl.set(url);
+        this.frameUrl.set(this.toSafeUrl(url));
       });
   }
 
@@ -121,8 +125,12 @@ export class DemoWebsiteWidgetComponent implements OnInit, OnDestroy {
   protected applyUrl(raw: string): void {
     const safeUrl = sanitizeWebsiteUrl(raw);
     this.urlInput.set(safeUrl);
-    this.frameUrl.set(safeUrl);
+    this.frameUrl.set(this.toSafeUrl(safeUrl));
     this.scheduleSave({ url: safeUrl });
+  }
+
+  private toSafeUrl(url: string): SafeResourceUrl {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   private scheduleSave(payload: DemoWebsiteState): void {
