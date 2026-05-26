@@ -20,18 +20,18 @@ export function registerGridLayoutTests(demoPath: string): void {
     test('mosaic default layout uses varied column spans', async ({ page }) => {
       const notes = await readGridPlacement(await cellForWidget(page, 'Notes'));
       const timer = await readGridPlacement(await cellForWidget(page, 'Timer'));
-      const website = await readGridPlacement(await cellForWidget(page, 'Website'));
 
       expect(Number(notes.colStart)).toBe(1);
       expect(Number(notes.colEnd)).toBe(8);
       expect(Number(timer.colStart)).toBe(8);
       expect(Number(timer.colEnd)).toBe(11);
-      expect(Number(website.rowStart)).toBe(3);
-      expect(Number(website.rowEnd)).toBe(5);
-      expect(Number(website.colStart)).toBe(8);
     });
 
     test('website widget renders an iframe with persisted URL controls', async ({ page }) => {
+      await enterEditMode(page);
+      await page.getByRole('button', { name: 'Add widget' }).click();
+      await page.getByRole('menuitem', { name: 'Website' }).click();
+
       const websiteCell = await cellForWidget(page, 'Website');
       await expect(websiteCell.locator('iframe.demo-website__frame')).toHaveAttribute(
         'src',

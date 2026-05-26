@@ -73,11 +73,5 @@ export function createDemoLayoutItems(contextId: string): WidgetLayoutItem[] {
       rowStart: 2,
       rowEnd: 3,
     }),
-    createLayoutItem('demo-website', contextId, {
-      colStart: 8,
-      colEnd: 13,
-      rowStart: 3,
-      rowEnd: 5,
-    }),
   ];
 }
