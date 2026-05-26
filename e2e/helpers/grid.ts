@@ -240,7 +240,7 @@ export async function collapseWidgetToTab(page: Page, title: string): Promise<vo
 
 /** Collapse all widgets except Notes so corner drops have open grid space */
 export async function isolateNotesWidget(page: Page): Promise<void> {
-  for (const title of ['Checklist', 'Timer', 'Quick Links']) {
+  for (const title of ['Checklist', 'Timer', 'Quick Links', 'Website']) {
     await collapseWidgetToTab(page, title);
   }
 }

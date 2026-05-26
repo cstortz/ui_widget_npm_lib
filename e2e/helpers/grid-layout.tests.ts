@@ -20,11 +20,23 @@ export function registerGridLayoutTests(demoPath: string): void {
     test('mosaic default layout uses varied column spans', async ({ page }) => {
       const notes = await readGridPlacement(await cellForWidget(page, 'Notes'));
       const timer = await readGridPlacement(await cellForWidget(page, 'Timer'));
+      const website = await readGridPlacement(await cellForWidget(page, 'Website'));
 
       expect(Number(notes.colStart)).toBe(1);
       expect(Number(notes.colEnd)).toBe(8);
       expect(Number(timer.colStart)).toBe(8);
       expect(Number(timer.colEnd)).toBe(11);
+      expect(Number(website.rowStart)).toBe(3);
+      expect(Number(website.rowEnd)).toBe(5);
+    });
+
+    test('website widget renders an iframe with persisted URL controls', async ({ page }) => {
+      const websiteCell = await cellForWidget(page, 'Website');
+      await expect(websiteCell.locator('iframe.demo-website__frame')).toHaveAttribute(
+        'src',
+        /example\.com/
+      );
+      await expect(websiteCell.getByRole('button', { name: 'Load' })).toBeVisible();
     });
 
     test('dragging one widget does not change another widget grid placement', async ({
@@ -121,10 +133,7 @@ export function registerGridLayoutTests(demoPath: string): void {
 
       const after = await readGridPlacement(await cellForWidget(page, 'Notes'));
       const afterCellBox = await notesCell.boundingBox();
-      const afterPanelBox = await notesCell
-        .locator('.wdg-widget-panel-host, .wdg-widget-panel')
-        .first()
-        .boundingBox();
+      const afterPanelBox = await notesCell.locator('.wdg-widget-panel').boundingBox();
       const state = await readWidgetGridFromState(page, 'demo-notes');
 
       expect(Number(before.rowStart)).toBe(1);

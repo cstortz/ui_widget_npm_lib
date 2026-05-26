@@ -35,6 +35,13 @@ demoWidgetRegistry.registerMany([
     minWidthPx: 240,
     canCollapse: true,
   },
+  {
+    widgetId: 'demo-website',
+    displayName: 'Website',
+    description: 'Embed a web page in an iframe',
+    minWidthPx: 480,
+    canCollapse: true,
+  },
 ]);
 
 export const DEMO_LAYOUT_VERSION = 2;
@@ -65,6 +72,12 @@ export function createDemoLayoutItems(contextId: string): WidgetLayoutItem[] {
       colEnd: 13,
       rowStart: 2,
       rowEnd: 3,
+    }),
+    createLayoutItem('demo-website', contextId, {
+      colStart: 1,
+      colEnd: 8,
+      rowStart: 3,
+      rowEnd: 5,
     }),
   ];
 }

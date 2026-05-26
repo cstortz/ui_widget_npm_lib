@@ -8,6 +8,7 @@ import { DemoNotesWidgetComponent } from '../widgets/demo-notes-widget.component
 import { DemoChecklistWidgetComponent } from '../widgets/demo-checklist-widget.component';
 import { DemoTimerWidgetComponent } from '../widgets/demo-timer-widget.component';
 import { DemoLinksWidgetComponent } from '../widgets/demo-links-widget.component';
+import { DemoWebsiteWidgetComponent } from '../widgets/demo-website-widget.component';
 
 @Component({
   selector: 'demo-widget-host',
@@ -21,6 +22,7 @@ import { DemoLinksWidgetComponent } from '../widgets/demo-links-widget.component
     DemoChecklistWidgetComponent,
     DemoTimerWidgetComponent,
     DemoLinksWidgetComponent,
+    DemoWebsiteWidgetComponent,
   ],
   template: `
     <wdg-widget-panel
@@ -42,6 +44,9 @@ import { DemoLinksWidgetComponent } from '../widgets/demo-links-widget.component
         }
         @case ('demo-links') {
           <demo-links-widget [item]="item" />
+        }
+        @case ('demo-website') {
+          <demo-website-widget [config]="widgetConfig(item)" />
         }
       }
     </wdg-widget-panel>

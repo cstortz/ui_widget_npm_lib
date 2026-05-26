@@ -4,6 +4,7 @@ import { DemoChecklistWidget } from './DemoChecklistWidget';
 import { DemoNotesWidget } from './DemoNotesWidget';
 import { DemoTimerWidget } from './DemoTimerWidget';
 import { DemoLinksWidget } from './DemoLinksWidget';
+import { DemoWebsiteWidget } from './DemoWebsiteWidget';
 
 export function DemoWidgetHost({ item }: { item: WidgetLayoutItem }) {
   const layoutService = useWorkspaceLayoutService();
@@ -31,6 +32,7 @@ export function DemoWidgetHost({ item }: { item: WidgetLayoutItem }) {
       )}
       {item.widgetId === 'demo-timer' && <DemoTimerWidget item={item} />}
       {item.widgetId === 'demo-links' && <DemoLinksWidget item={item} />}
+      {item.widgetId === 'demo-website' && <DemoWebsiteWidget config={widgetConfig} />}
     </WidgetPanel>
   );
 }

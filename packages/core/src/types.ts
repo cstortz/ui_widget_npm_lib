@@ -28,7 +28,8 @@ export type KnownWidgetId =
   | 'job-sites'
   | 'improvement-tracker'
   | 'demo-notes'
-  | 'demo-checklist';
+  | 'demo-checklist'
+  | 'demo-website';
 
 /** Widget type id — known ids plus custom string ids from consumer apps */
 export type WidgetId = KnownWidgetId | (string & {});
