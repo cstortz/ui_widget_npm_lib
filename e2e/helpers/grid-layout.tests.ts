@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  addWidgetFromMenu,
   cellForWidget,
   dragCellBy,
   enterEditMode,
@@ -29,8 +30,7 @@ export function registerGridLayoutTests(demoPath: string): void {
 
     test('website widget renders an iframe with persisted URL controls', async ({ page }) => {
       await enterEditMode(page);
-      await page.getByRole('button', { name: 'Add widget' }).click();
-      await page.getByRole('button', { name: 'Website', exact: true }).click();
+      await addWidgetFromMenu(page, 'Website');
 
       const websiteCell = await cellForWidget(page, 'Website');
       await expect(websiteCell.locator('iframe.demo-website__frame')).toHaveAttribute(

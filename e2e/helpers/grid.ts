@@ -200,6 +200,15 @@ export async function enterEditMode(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Done editing' }).waitFor({ state: 'visible' });
 }
 
+/** React toolbar uses buttons; Angular Material menu items expose role menuitem. */
+export async function addWidgetFromMenu(page: Page, displayName: string): Promise<void> {
+  await page.getByRole('button', { name: 'Add widget' }).click();
+  await page
+    .getByRole('button', { name: displayName, exact: true })
+    .or(page.getByRole('menuitem', { name: displayName, exact: true }))
+    .click();
+}
+
 export async function exitEditMode(page: Page): Promise<void> {
   await page.mouse.up();
   await page.keyboard.press('Escape');
