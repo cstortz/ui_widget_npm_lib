@@ -28,6 +28,7 @@ export function registerGridLayoutTests(demoPath: string): void {
       expect(Number(timer.colEnd)).toBe(11);
       expect(Number(website.rowStart)).toBe(3);
       expect(Number(website.rowEnd)).toBe(5);
+      expect(Number(website.colStart)).toBe(8);
     });
 
     test('website widget renders an iframe with persisted URL controls', async ({ page }) => {
